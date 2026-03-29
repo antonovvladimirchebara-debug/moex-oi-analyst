@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="ru" prefix="og: https://ogp.me/ns#">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+
+  <title>Аналитик MOEX/OI — Финансовый блог по рынку акций и фьючерсов</title>
+  <meta name="description" content="Авторский блог финансового аналитика по Московской бирже (MOEX). Анализ открытого интереса (OI), фьючерсов, акций. Авторские мысли по рынку.">
+  <meta name="keywords" content="MOEX, московская биржа, открытый интерес, OI, фьючерсы, акции, финансовый анализ, трейдинг, SI, GAZP, SBER, RI">
+  <meta name="author" content="BigFish — Аналитик MOEX/OI">
+  <meta name="robots" content="index, follow">
+  <link rel="canonical" href="https://antonovvladimirchebara-debug.github.io/moex-oi-analyst/">
+
+  <!-- Open Graph -->
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://antonovvladimirchebara-debug.github.io/moex-oi-analyst/">
+  <meta property="og:title" content="Аналитик MOEX/OI — Финансовый блог">
+  <meta property="og:description" content="Авторский анализ рынка акций и фьючерсов Московской биржи. Открытый интерес, уровни ликвидности, авторские идеи.">
+  <meta property="og:image" content="https://antonovvladimirchebara-debug.github.io/moex-oi-analyst/og-image.png">
+  <meta property="og:locale" content="ru_RU">
+  <meta property="og:site_name" content="Аналитик MOEX/OI">
+
+  <!-- Twitter Cards -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Аналитик MOEX/OI — Финансовый блог">
+  <meta name="twitter:description" content="Авторский анализ рынка акций и фьючерсов Московской биржи.">
+  <meta name="twitter:image" content="https://antonovvladimirchebara-debug.github.io/moex-oi-analyst/og-image.png">
+
+  <!-- JSON-LD Schema -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "Blog",
+    "name": "Аналитик MOEX/OI",
+    "url": "https://antonovvladimirchebara-debug.github.io/moex-oi-analyst/",
+    "description": "Финансовый блог по рынку акций и фьючерсов Московской биржи",
+    "inLanguage": "ru",
+    "author": {
+      "@type": "Person",
+      "name": "BigFish",
+      "url": "https://github.com/antonovvladimirchebara-debug"
+    },
+    "about": {
+      "@type": "Thing",
+      "name": "Московская биржа MOEX, открытый интерес OI, фьючерсы"
+    }
+  }
+  </script>
+
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/animations.css">
+
+  <!-- Preconnect for performance -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;600&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+</head>
+<body>
+  <!-- Canvas for Three.js background -->
+  <canvas id="bg-canvas"></canvas>
+
+  <!-- Scanline overlay -->
+  <div class="scanlines"></div>
+  <div class="noise-overlay"></div>
+
+  <!-- Navigation -->
+  <nav class="nav-main" role="navigation" aria-label="Главная навигация">
+    <div class="nav-inner">
+      <a href="index.html" class="nav-logo" aria-label="Аналитик MOEX/OI — на главную">
+        <span class="logo-icon">◈</span>
+        <span class="logo-text">MOEX<span class="accent">/OI</span></span>
+      </a>
+      <ul class="nav-links" role="list">
+        <li><a href="index.html" class="nav-link active">ГЛАВНАЯ</a></li>
+        <li><a href="blog.html" class="nav-link">БЛОГ</a></li>
+        <li><a href="#about" class="nav-link">ОБО МНЕ</a></li>
+      </ul>
+      <div class="nav-ticker" aria-hidden="true">
+        <span class="ticker-text" id="market-ticker">MOEX: АНАЛИЗ РЫНКА ● ОТКРЫТЫЙ ИНТЕРЕС ● ФЬЮЧЕРСЫ ●</span>
+      </div>
+    </div>
+  </nav>
+
+  <!-- HERO SECTION -->
+  <header class="hero" role="banner">
+    <div class="hero-content">
+      <div id="title-3d-container" aria-hidden="true"></div>
+      <div class="hero-text">
+        <div class="hero-badge">
+          <span class="badge-dot"></span>
+          <span>LIVE ANALYTICS</span>
+        </div>
+        <h1 class="hero-title">
+          <span class="title-line-1">АНАЛИТИК</span>
+          <span class="title-line-2">MOEX<span class="neon-slash">/</span>OI</span>
+        </h1>
+        <p class="hero-sub">Финансовый аналитик и редактор блога по Московской бирже</p>
+        <p class="hero-desc">Авторский анализ рынка акций, фьючерсов и открытого интереса. <br>Реальные мысли — без воды.</p>
+        <div class="hero-cta">
+          <a href="blog.html" class="btn-primary">
+            <span class="btn-icon">▶</span>
+            ЧИТАТЬ БЛОГ
+          </a>
+          <a href="#latest-posts" class="btn-secondary">ПОСЛЕДНИЕ ПОСТЫ</a>
+        </div>
+      </div>
+      <div class="hero-stats" aria-label="Статистика блога">
+        <div class="stat-card">
+          <span class="stat-value" id="posts-count">—</span>
+          <span class="stat-label">ПОСТОВ</span>
+        </div>
+        <div class="stat-divider" aria-hidden="true"></div>
+        <div class="stat-card">
+          <span class="stat-value neon-cyan">OI</span>
+          <span class="stat-label">АНАЛИТИКА</span>
+        </div>
+        <div class="stat-divider" aria-hidden="true"></div>
+        <div class="stat-card">
+          <span class="stat-value neon-magenta">MOEX</span>
+          <span class="stat-label">БИРЖА</span>
+        </div>
+      </div>
+    </div>
+    <div class="hero-scroll-indicator" aria-hidden="true">
+      <div class="scroll-line"></div>
+      <span>SCROLL</span>
+    </div>
+  </header>
+
+  <!-- LATEST POSTS -->
+  <main id="main-content">
+    <section id="latest-posts" class="section-posts" aria-labelledby="posts-heading">
+      <div class="section-header">
+        <div class="section-label">ПОСЛЕДНЕЕ</div>
+        <h2 id="posts-heading" class="section-title">ЗАПИСИ АНАЛИТИКА</h2>
+        <div class="section-line"></div>
+      </div>
+      <div id="posts-grid" class="posts-grid" role="feed" aria-label="Лента постов">
+        <div class="loading-state" aria-live="polite">
+          <div class="loading-spinner"></div>
+          <span>ЗАГРУЗКА ДАННЫХ...</span>
+        </div>
+      </div>
+      <div class="section-footer">
+        <a href="blog.html" class="btn-outline">СМОТРЕТЬ ВСЕ ПОСТЫ →</a>
+      </div>
+    </section>
+
+    <!-- ABOUT SECTION -->
+    <section id="about" class="section-about" aria-labelledby="about-heading">
+      <div class="about-grid">
+        <div class="about-visual" aria-hidden="true">
+          <div class="about-avatar">
+            <div class="avatar-ring"></div>
+            <div class="avatar-ring ring-2"></div>
+            <div class="avatar-icon">◈</div>
+          </div>
+          <div class="about-data-stream"></div>
+        </div>
+        <div class="about-content">
+          <div class="section-label">ОБ АВТОРЕ</div>
+          <h2 id="about-heading" class="section-title">BigFish</h2>
+          <p class="about-role">Финансовый аналитик MOEX/OI</p>
+          <p class="about-text">
+            Торгую фьючерсами и акциями на Московской бирже. Слежу за открытым интересом (OI) как за основным индикатором настроений крупных игроков. Пишу честно — что вижу в рынке, то и пишу.
+          </p>
+          <ul class="about-tags" role="list" aria-label="Специализации">
+            <li class="tag">Открытый интерес (OI)</li>
+            <li class="tag">Фьючерсы MOEX</li>
+            <li class="tag">Акции</li>
+            <li class="tag">Уровни ликвидности</li>
+            <li class="tag">SI / RI / GAZP / SBER</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- FOOTER -->
+  <footer class="site-footer" role="contentinfo">
+    <div class="footer-inner">
+      <div class="footer-brand">
+        <span class="logo-icon">◈</span>
+        <span class="footer-title">АНАЛИТИК MOEX/OI</span>
+      </div>
+      <p class="footer-disclaimer">Все материалы блога носят информационный характер и не являются инвестиционными рекомендациями.</p>
+      <div class="footer-links" role="list">
+        <a href="index.html" role="listitem">Главная</a>
+        <a href="blog.html" role="listitem">Блог</a>
+        <a href="https://github.com/antonovvladimirchebara-debug" target="_blank" rel="noopener noreferrer" role="listitem">GitHub</a>
+      </div>
+      <p class="footer-copy">© 2026 BigFish. Московская биржа MOEX/OI Аналитика.</p>
+    </div>
+  </footer>
+
+  <!-- Scripts -->
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://esm.sh/three@0.162.0",
+      "three/addons/": "https://esm.sh/three@0.162.0/examples/jsm/"
+    }
+  }
+  </script>
+  <script type="module" src="js/three-scene.js"></script>
+  <script src="js/blog.js" defer></script>
+</body>
+</html>

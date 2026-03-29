@@ -1,0 +1,11 @@
+theme: jekyll-theme-minimal
+title: "Аналитик MOEX/OI"
+description: "Финансовый блог по рынку акций и фьючерсов Московской биржи"
+url: "https://antonovvladimirchebara-debug.github.io"
+baseurl: "/moex-oi-analyst"
+lang: ru
+
+# Exclude admin from Jekyll processing
+exclude:
+  - node_modules/
+  - "*.sh"

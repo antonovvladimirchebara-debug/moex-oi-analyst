@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="ru" prefix="og: https://ogp.me/ns#">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>Блог — Аналитик MOEX/OI | Все записи по рынку акций и фьючерсов</title>
+  <meta name="description" content="Все записи финансового аналитика по MOEX/OI. Анализ открытого интереса, фьючерсов, акций Московской биржи. Авторские идеи и наблюдения по рынку.">
+  <meta name="keywords" content="MOEX блог, открытый интерес OI, фьючерсы анализ, MOEX аналитика, московская биржа блог">
+  <meta name="robots" content="index, follow">
+  <link rel="canonical" href="https://antonovvladimirchebara-debug.github.io/moex-oi-analyst/blog.html">
+
+  <!-- Open Graph -->
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://antonovvladimirchebara-debug.github.io/moex-oi-analyst/blog.html">
+  <meta property="og:title" content="Блог — Аналитик MOEX/OI">
+  <meta property="og:description" content="Все записи по анализу рынка акций и фьючерсов Московской биржи.">
+  <meta property="og:image" content="https://antonovvladimirchebara-debug.github.io/moex-oi-analyst/og-image.png">
+  <meta property="og:locale" content="ru_RU">
+
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/animations.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;600&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+</head>
+<body class="page-blog">
+  <canvas id="bg-canvas"></canvas>
+  <div class="scanlines"></div>
+  <div class="noise-overlay"></div>
+
+  <nav class="nav-main" role="navigation" aria-label="Главная навигация">
+    <div class="nav-inner">
+      <a href="index.html" class="nav-logo">
+        <span class="logo-icon">◈</span>
+        <span class="logo-text">MOEX<span class="accent">/OI</span></span>
+      </a>
+      <ul class="nav-links" role="list">
+        <li><a href="index.html" class="nav-link">ГЛАВНАЯ</a></li>
+        <li><a href="blog.html" class="nav-link active">БЛОГ</a></li>
+        <li><a href="index.html#about" class="nav-link">ОБО МНЕ</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <header class="page-header">
+    <div class="page-header-inner">
+      <div class="section-label">АНАЛИТИКА</div>
+      <h1 class="page-title">ЗАПИСИ БЛОГА</h1>
+      <p class="page-subtitle">Мысли по рынку акций, фьючерсов и открытому интересу MOEX</p>
+    </div>
+  </header>
+
+  <main id="main-content" class="blog-main">
+    <!-- Filters / Tags -->
+    <div class="blog-filters" role="navigation" aria-label="Фильтры по тегам">
+      <button class="filter-btn active" data-tag="all">ВСЕ</button>
+      <button class="filter-btn" data-tag="OI">ОТКРЫТЫЙ ИНТЕРЕС</button>
+      <button class="filter-btn" data-tag="futures">ФЬЮЧЕРСЫ</button>
+      <button class="filter-btn" data-tag="акции">АКЦИИ</button>
+      <button class="filter-btn" data-tag="обзор">ОБЗОР РЫНКА</button>
+    </div>
+
+    <!-- Posts count -->
+    <div class="blog-meta" aria-live="polite">
+      <span id="blog-count">Загрузка...</span>
+    </div>
+
+    <!-- Posts list -->
+    <div id="blog-posts" class="blog-posts-list" role="feed" aria-label="Все посты блога">
+      <div class="loading-state">
+        <div class="loading-spinner"></div>
+        <span>ЗАГРУЗКА ДАННЫХ...</span>
+      </div>
+    </div>
+
+    <!-- Pagination -->
+    <nav class="pagination" id="pagination" aria-label="Пагинация постов" hidden>
+      <button class="page-btn" id="prev-page" aria-label="Предыдущая страница">← НАЗАД</button>
+      <span class="page-info" id="page-info"></span>
+      <button class="page-btn" id="next-page" aria-label="Следующая страница">ВПЕРЁД →</button>
+    </nav>
+  </main>
+
+  <footer class="site-footer" role="contentinfo">
+    <div class="footer-inner">
+      <div class="footer-brand">
+        <span class="logo-icon">◈</span>
+        <span class="footer-title">АНАЛИТИК MOEX/OI</span>
+      </div>
+      <p class="footer-disclaimer">Все материалы носят информационный характер и не являются инвестиционными рекомендациями.</p>
+      <div class="footer-links">
+        <a href="index.html">Главная</a>
+        <a href="blog.html">Блог</a>
+        <a href="https://github.com/antonovvladimirchebara-debug" target="_blank" rel="noopener noreferrer">GitHub</a>
+      </div>
+      <p class="footer-copy">© 2026 BigFish. Московская биржа MOEX/OI Аналитика.</p>
+    </div>
+  </footer>
+
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://esm.sh/three@0.162.0",
+      "three/addons/": "https://esm.sh/three@0.162.0/examples/jsm/"
+    }
+  }
+  </script>
+  <script type="module" src="js/three-scene.js"></script>
+  <script src="js/blog.js" defer></script>
+</body>
+</html>

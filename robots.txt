@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+Disallow: /admin.html
+
+Sitemap: https://antonovvladimirchebara-debug.github.io/moex-oi-analyst/sitemap.xml
+
+# Аналитик MOEX/OI — финансовый блог по рынку акций и фьючерсов Московской биржи

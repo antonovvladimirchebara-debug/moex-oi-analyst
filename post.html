@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!-- Dynamic meta — filled by JS -->
+  <title id="page-title">Пост — Аналитик MOEX/OI</title>
+  <meta name="description" id="page-desc" content="Авторский анализ рынка MOEX/OI">
+  <meta name="robots" content="index, follow">
+  <link rel="canonical" id="page-canonical" href="https://antonovvladimirchebara-debug.github.io/moex-oi-analyst/post.html">
+
+  <!-- OG dynamic -->
+  <meta property="og:type" content="article">
+  <meta property="og:url" id="og-url" content="">
+  <meta property="og:title" id="og-title" content="">
+  <meta property="og:description" id="og-desc" content="">
+  <meta property="og:image" content="https://antonovvladimirchebara-debug.github.io/moex-oi-analyst/og-image.png">
+  <meta property="og:locale" content="ru_RU">
+  <meta property="article:author" content="BigFish">
+
+  <!-- JSON-LD BlogPosting — filled dynamically -->
+  <script type="application/ld+json" id="post-schema"></script>
+
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/animations.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;600&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+
+  <!-- marked.js for markdown rendering -->
+  <script src="https://cdn.jsdelivr.net/npm/marked@11.2.0/marked.min.js"></script>
+</head>
+<body class="page-post">
+  <canvas id="bg-canvas"></canvas>
+  <div class="scanlines"></div>
+  <div class="noise-overlay"></div>
+
+  <nav class="nav-main" role="navigation" aria-label="Главная навигация">
+    <div class="nav-inner">
+      <a href="index.html" class="nav-logo">
+        <span class="logo-icon">◈</span>
+        <span class="logo-text">MOEX<span class="accent">/OI</span></span>
+      </a>
+      <ul class="nav-links" role="list">
+        <li><a href="index.html" class="nav-link">ГЛАВНАЯ</a></li>
+        <li><a href="blog.html" class="nav-link">БЛОГ</a></li>
+        <li><a href="index.html#about" class="nav-link">ОБО МНЕ</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <main id="main-content" class="post-main">
+    <div id="post-loading" class="loading-state" aria-live="polite">
+      <div class="loading-spinner"></div>
+      <span>ЗАГРУЗКА ПОСТА...</span>
+    </div>
+
+    <article id="post-article" class="post-article" hidden aria-label="Пост блога">
+      <!-- Breadcrumb -->
+      <nav class="breadcrumb" aria-label="Навигация-хлебные крошки">
+        <a href="index.html">Главная</a>
+        <span aria-hidden="true">›</span>
+        <a href="blog.html">Блог</a>
+        <span aria-hidden="true">›</span>
+        <span id="post-breadcrumb-title" aria-current="page"></span>
+      </nav>
+
+      <!-- Post header -->
+      <header class="post-header">
+        <div id="post-tags" class="post-tags" role="list" aria-label="Теги поста"></div>
+        <h1 id="post-title" class="post-title"></h1>
+        <div class="post-meta">
+          <span class="post-author">
+            <span class="author-icon">◈</span>
+            BigFish
+          </span>
+          <time id="post-date" class="post-date" datetime=""></time>
+          <span id="post-read-time" class="post-read-time"></span>
+        </div>
+        <div class="post-divider" aria-hidden="true"></div>
+      </header>
+
+      <!-- Post body -->
+      <div id="post-body" class="post-body prose" aria-label="Содержание поста"></div>
+
+      <!-- Post footer -->
+      <footer class="post-footer">
+        <div class="post-share" aria-label="Поделиться">
+          <span class="share-label">ПОДЕЛИТЬСЯ:</span>
+          <button class="share-btn" id="copy-link-btn" aria-label="Скопировать ссылку">
+            <span>ССЫЛКА</span>
+          </button>
+          <a id="share-telegram" href="#" target="_blank" rel="noopener noreferrer" class="share-btn" aria-label="Поделиться в Telegram">
+            TG
+          </a>
+          <a id="share-twitter" href="#" target="_blank" rel="noopener noreferrer" class="share-btn" aria-label="Поделиться в Twitter">
+            ✕
+          </a>
+        </div>
+        <div class="post-nav" role="navigation" aria-label="Навигация между постами">
+          <a id="prev-post" href="#" class="post-nav-btn" hidden>← ПРЕДЫДУЩИЙ</a>
+          <a href="blog.html" class="post-nav-btn btn-outline">ВСЕ ПОСТЫ</a>
+          <a id="next-post" href="#" class="post-nav-btn" hidden>СЛЕДУЮЩИЙ →</a>
+        </div>
+      </footer>
+    </article>
+
+    <!-- COMMENTS SECTION -->
+    <section id="comments" class="comments-section" hidden aria-labelledby="comments-heading">
+      <div class="section-header">
+        <div class="section-label">ОБСУЖДЕНИЕ</div>
+        <h2 id="comments-heading" class="section-title">КОММЕНТАРИИ</h2>
+      </div>
+      <div id="giscus-container">
+        <!-- Giscus loads here dynamically -->
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer" role="contentinfo">
+    <div class="footer-inner">
+      <div class="footer-brand">
+        <span class="logo-icon">◈</span>
+        <span class="footer-title">АНАЛИТИК MOEX/OI</span>
+      </div>
+      <p class="footer-disclaimer">Все материалы носят информационный характер и не являются инвестиционными рекомендациями.</p>
+      <div class="footer-links">
+        <a href="index.html">Главная</a>
+        <a href="blog.html">Блог</a>
+        <a href="https://github.com/antonovvladimirchebara-debug" target="_blank" rel="noopener noreferrer">GitHub</a>
+      </div>
+      <p class="footer-copy">© 2026 BigFish. Московская биржа MOEX/OI Аналитика.</p>
+    </div>
+  </footer>
+
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://esm.sh/three@0.162.0",
+      "three/addons/": "https://esm.sh/three@0.162.0/examples/jsm/"
+    }
+  }
+  </script>
+  <script type="module" src="js/three-scene.js"></script>
+  <script src="js/blog.js" defer></script>
+</body>
+</html>

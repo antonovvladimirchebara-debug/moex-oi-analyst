@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Panel — Аналитик MOEX/OI</title>
+  <meta name="robots" content="noindex, nofollow">
+
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/animations.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;600&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+
+  <!-- EasyMDE for markdown editor -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/easymde@2.18.0/dist/easymde.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/easymde@2.18.0/dist/easymde.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/marked@11.2.0/marked.min.js"></script>
+</head>
+<body class="page-admin">
+  <canvas id="bg-canvas"></canvas>
+  <div class="scanlines"></div>
+
+  <nav class="nav-main" role="navigation">
+    <div class="nav-inner">
+      <a href="index.html" class="nav-logo">
+        <span class="logo-icon">◈</span>
+        <span class="logo-text">MOEX<span class="accent">/OI</span></span>
+      </a>
+      <ul class="nav-links" role="list">
+        <li><a href="index.html" class="nav-link">ГЛАВНАЯ</a></li>
+        <li><a href="blog.html" class="nav-link">БЛОГ</a></li>
+        <li><span class="nav-link active">ADMIN</span></li>
+      </ul>
+      <button id="logout-btn" class="btn-danger" hidden>ВЫЙТИ</button>
+    </div>
+  </nav>
+
+  <!-- AUTH GATE -->
+  <div id="auth-gate" class="admin-auth-gate">
+    <div class="auth-card glass-card">
+      <div class="auth-icon">◈</div>
+      <h1 class="auth-title">ПАНЕЛЬ АВТОРА</h1>
+      <p class="auth-sub">Введи GitHub Personal Access Token для входа</p>
+      <div class="form-group">
+        <label for="token-input" class="form-label">GITHUB TOKEN</label>
+        <input type="password" id="token-input" class="form-input neon-input"
+               placeholder="ghp_xxxxxxxxxxxx" autocomplete="current-password"
+               aria-label="GitHub Personal Access Token">
+      </div>
+      <button id="login-btn" class="btn-primary btn-full">
+        <span class="btn-icon">▶</span>
+        ВОЙТИ
+      </button>
+      <p id="auth-error" class="auth-error" hidden></p>
+    </div>
+  </div>
+
+  <!-- ADMIN PANEL -->
+  <main id="admin-panel" class="admin-panel" hidden>
+    <div class="admin-header">
+      <div class="section-label">ПАНЕЛЬ УПРАВЛЕНИЯ</div>
+      <h1 class="page-title">ADMIN PANEL</h1>
+    </div>
+
+    <!-- Tabs -->
+    <div class="admin-tabs" role="tablist">
+      <button class="tab-btn active" role="tab" aria-selected="true" data-tab="new-post">НОВЫЙ ПОСТ</button>
+      <button class="tab-btn" role="tab" aria-selected="false" data-tab="manage-posts">УПРАВЛЕНИЕ ПОСТАМИ</button>
+    </div>
+
+    <!-- NEW POST TAB -->
+    <section id="tab-new-post" class="admin-tab-content" role="tabpanel" aria-label="Создать новый пост">
+      <div class="admin-card glass-card">
+        <h2 class="admin-section-title">СОЗДАТЬ ПОСТ</h2>
+
+        <div class="form-group">
+          <label for="post-title-input" class="form-label">ЗАГОЛОВОК *</label>
+          <input type="text" id="post-title-input" class="form-input neon-input"
+                 placeholder="Обзор OI на фьючерс SI: что говорят крупные игроки"
+                 required aria-required="true">
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="post-tags-input" class="form-label">ТЕГИ (через запятую)</label>
+            <input type="text" id="post-tags-input" class="form-input neon-input"
+                   placeholder="OI, фьючерсы, SI">
+          </div>
+          <div class="form-group">
+            <label for="post-slug-input" class="form-label">SLUG (URL)</label>
+            <input type="text" id="post-slug-input" class="form-input neon-input"
+                   placeholder="auto-generated" id="post-slug">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="post-excerpt-input" class="form-label">КРАТКОЕ ОПИСАНИЕ (для SEO)</label>
+          <textarea id="post-excerpt-input" class="form-input neon-input" rows="2"
+                    placeholder="Краткое резюме поста для поисковиков и превью (150-160 символов)"></textarea>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">СОДЕРЖАНИЕ ПОСТА (Markdown) *</label>
+          <textarea id="post-content-editor" aria-label="Редактор поста в формате markdown"></textarea>
+        </div>
+
+        <div class="form-actions">
+          <button id="preview-btn" class="btn-secondary">ПРЕДПРОСМОТР</button>
+          <button id="publish-btn" class="btn-primary">
+            <span class="btn-icon">▶</span>
+            ОПУБЛИКОВАТЬ
+          </button>
+        </div>
+
+        <div id="publish-status" class="publish-status" hidden></div>
+      </div>
+
+      <!-- Preview pane -->
+      <div id="preview-pane" class="preview-pane glass-card" hidden>
+        <div class="admin-section-title">ПРЕДПРОСМОТР</div>
+        <div id="preview-content" class="post-body prose"></div>
+      </div>
+    </section>
+
+    <!-- MANAGE POSTS TAB -->
+    <section id="tab-manage-posts" class="admin-tab-content" role="tabpanel" aria-label="Управление постами" hidden>
+      <div class="admin-card glass-card">
+        <h2 class="admin-section-title">ВСЕ ПОСТЫ</h2>
+        <div id="admin-posts-list" class="admin-posts-list">
+          <div class="loading-state">
+            <div class="loading-spinner"></div>
+            <span>ЗАГРУЗКА...</span>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://esm.sh/three@0.162.0",
+      "three/addons/": "https://esm.sh/three@0.162.0/examples/jsm/"
+    }
+  }
+  </script>
+  <script type="module" src="js/three-scene.js"></script>
+  <script src="js/admin.js" defer></script>
+</body>
+</html>
