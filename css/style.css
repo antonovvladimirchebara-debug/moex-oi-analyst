@@ -1222,6 +1222,106 @@ body > *:not(#bg-canvas):not(.scanlines):not(.noise-overlay) {
 }
 .admin-post-actions { display: flex; gap: 0.5rem; }
 
+/* ---------- AUTO-TAGS ---------- */
+.form-label-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+}
+.form-label-row .form-label { margin-bottom: 0; }
+
+.btn-autotags {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  letter-spacing: 2px;
+  color: var(--neon-magenta);
+  background: rgba(255,0,255,0.06);
+  border: 1px solid rgba(255,0,255,0.35);
+  border-radius: 100px;
+  padding: 0.3rem 0.8rem;
+  transition: var(--transition-fast);
+  cursor: pointer;
+}
+.btn-autotags:hover {
+  background: rgba(255,0,255,0.14);
+  box-shadow: 0 0 12px rgba(255,0,255,0.25);
+}
+.btn-autotags.loading {
+  opacity: 0.6;
+  pointer-events: none;
+}
+.autotags-icon {
+  font-style: normal;
+  animation: none;
+}
+.btn-autotags.loading .autotags-icon {
+  animation: spin 0.8s linear infinite;
+  display: inline-block;
+}
+
+.tags-suggestions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+  padding: 0.75rem 1rem;
+  border: 1px dashed rgba(0,255,255,0.18);
+  border-radius: var(--radius-sm);
+  background: rgba(0,255,255,0.02);
+  animation: fade-in 0.3s ease;
+}
+.tags-suggestions-label {
+  width: 100%;
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  letter-spacing: 2px;
+  color: var(--text-muted);
+  margin-bottom: 0.25rem;
+}
+.tag-suggestion {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  letter-spacing: 1px;
+  padding: 0.25rem 0.7rem;
+  border-radius: 100px;
+  cursor: pointer;
+  transition: var(--transition-fast);
+  user-select: none;
+}
+.tag-suggestion.new {
+  color: var(--neon-cyan);
+  background: rgba(0,255,255,0.08);
+  border: 1px solid rgba(0,255,255,0.3);
+}
+.tag-suggestion.new:hover {
+  background: rgba(0,255,255,0.18);
+  box-shadow: 0 0 8px rgba(0,255,255,0.2);
+}
+.tag-suggestion.exists {
+  color: var(--text-muted);
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.08);
+  opacity: 0.5;
+  cursor: default;
+}
+.tag-suggestion .tag-add-icon {
+  font-size: 0.75rem;
+  line-height: 1;
+}
+.tags-suggestions-empty {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  color: var(--text-muted);
+  letter-spacing: 1px;
+}
+
 /* EasyMDE custom overrides */
 .EasyMDEContainer .CodeMirror {
   background: rgba(0,0,0,0.4) !important;

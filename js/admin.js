@@ -49,7 +49,235 @@ function showStatus(msg, type = 'success') {
   }
 }
 
-// ── GitHub API helpers ────────────────────────────────────────
+// ── AUTO-HASHTAG ENGINE ───────────────────────────────────────
+
+/**
+ * MOEX/Financial keyword → tag mapping dictionary
+ * Key: regex pattern (case-insensitive, Russian + Latin)
+ * Value: canonical tag name
+ */
+const HASHTAG_DICTIONARY = [
+  // ── Открытый интерес ──────────────────────────────────────
+  { patterns: [/\boi\b/i, /открыт\w* интерес/i, /open interest/i, /\bОИ\b/],
+    tag: 'OI', priority: 10 },
+
+  // ── Конкретные фьючерсы ───────────────────────────────────
+  { patterns: [/\bSI\b/, /доллар.рубл/i, /USD.RUB/i, /\bSiH/i, /\bSiM/i, /\bSiU/i, /\bSiZ/i],
+    tag: 'SI', priority: 9 },
+  { patterns: [/\bRI\b/, /индекс РТС/i, /RTS/i, /\bRiH/i, /\bRiM/i, /\bRiU/i, /\bRiZ/i],
+    tag: 'RI', priority: 9 },
+  { patterns: [/\bGAZR\b/i, /\bGAZP\b/i, /газпром/i, /GAZR/i],
+    tag: 'GAZR', priority: 9 },
+  { patterns: [/\bSBER\b/i, /сбербанк/i, /сбер(?!банк)/i],
+    tag: 'SBER', priority: 9 },
+  { patterns: [/\bLKOH\b/i, /лукойл/i],
+    tag: 'LKOH', priority: 9 },
+  { patterns: [/\bGMKN\b/i, /норникель/i, /норильский никель/i],
+    tag: 'GMKN', priority: 9 },
+  { patterns: [/\bYNDX\b/i, /яндекс/i],
+    tag: 'YNDX', priority: 9 },
+  { patterns: [/\bTAT[NP]\b/i, /татнефть/i],
+    tag: 'TATN', priority: 9 },
+  { patterns: [/\bROSN\b/i, /роснефть/i],
+    tag: 'ROSN', priority: 9 },
+  { patterns: [/\bNLMK\b/i, /НЛМК/i],
+    tag: 'NLMK', priority: 8 },
+  { patterns: [/\bMAGN\b/i, /ММК\b/i],
+    tag: 'MAGN', priority: 8 },
+  { patterns: [/\bAFKS\b/i, /АФК система/i],
+    tag: 'AFKS', priority: 8 },
+  { patterns: [/\bVTBR\b/i, /\bVTB\b/i, /ВТБ\b/i],
+    tag: 'VTBR', priority: 8 },
+  { patterns: [/\bMGNT\b/i, /магнит/i],
+    tag: 'MGNT', priority: 8 },
+  { patterns: [/\bPHOR\b/i, /фосагро/i],
+    tag: 'PHOR', priority: 8 },
+  { patterns: [/\bSNGS\b/i, /сургутнефт/i],
+    tag: 'SNGS', priority: 8 },
+  { patterns: [/\bMVID\b/i, /м\.видео/i, /мвидео/i],
+    tag: 'MVID', priority: 7 },
+  { patterns: [/\bGOLD\b/i, /\bGDH\b/i, /золото/i, /gold futures/i],
+    tag: 'золото', priority: 8 },
+  { patterns: [/\bED\b/, /евро.долл/i, /EUR.USD/i],
+    tag: 'ED', priority: 8 },
+
+  // ── Индексы ───────────────────────────────────────────────
+  { patterns: [/индекс мосбирж/i, /индекс московской/i, /IMOEX/i, /MOEX index/i],
+    tag: 'индекс MOEX', priority: 8 },
+  { patterns: [/индекс РТС/i, /\bRTSI\b/i],
+    tag: 'индекс РТС', priority: 8 },
+
+  // ── Тип анализа ───────────────────────────────────────────
+  { patterns: [/фьюч\w+/i, /futures/i, /контракт\w*/i, /экспирац/i, /поставк\w+/i],
+    tag: 'фьючерсы', priority: 7 },
+  { patterns: [/акци\w+/i, /акционер\w*/i, /дивиденд\w*/i, /\bstock\b/i],
+    tag: 'акции', priority: 7 },
+  { patterns: [/опцион\w*/i, /\boption\b/i, /страйк\w*/i, /\bdelta\b/i, /\bgamma\b/i, /\bvega\b/i],
+    tag: 'опционы', priority: 7 },
+  { patterns: [/обзор рынк/i, /обзор недел/i, /обзор торг/i, /weekly review/i, /итог\w+ недел/i],
+    tag: 'обзор рынка', priority: 7 },
+  { patterns: [/техничес\w+ анализ/i, /теханализ/i, /технический анализ/i],
+    tag: 'теханализ', priority: 6 },
+  { patterns: [/фундаменталь\w*/i, /fundamental\w*/i, /мультипликатор\w*/i, /P\/E/i, /EV\/EBITDA/i],
+    tag: 'фундаментал', priority: 6 },
+
+  // ── Торговые концепции ────────────────────────────────────
+  { patterns: [/ликвидность/i, /liquidity/i, /ликвидн\w*/i],
+    tag: 'ликвидность', priority: 6 },
+  { patterns: [/уровень\w*/i, /поддержк\w*/i, /сопротивлен\w*/i, /support/i, /resistance/i],
+    tag: 'уровни', priority: 6 },
+  { patterns: [/стакан/i, /order book/i, /стакан\w*/i, /объём\w*/i, /volume/i],
+    tag: 'объём', priority: 6 },
+  { patterns: [/имбаланс/i, /imbalance/i, /дисбаланс/i],
+    tag: 'имбаланс', priority: 6 },
+  { patterns: [/крупный игрок/i, /институционал/i, /smart money/i, /маркет.мейкер/i],
+    tag: 'крупные игроки', priority: 7 },
+  { patterns: [/шорт.сквиз/i, /short squeeze/i, /выбива\w+ стопов/i, /стоп.охота/i],
+    tag: 'шорт-сквиз', priority: 6 },
+  { patterns: [/лонг/i, /long position/i, /покупател\w*/i, /быки/i, /bullish/i],
+    tag: 'лонг', priority: 5 },
+  { patterns: [/шорт\b/i, /short position/i, /продавц\w*/i, /медведи/i, /bearish/i],
+    tag: 'шорт', priority: 5 },
+  { patterns: [/волатильность/i, /volatility/i, /\bVIX\b/i, /\bRVI\b/i],
+    tag: 'волатильность', priority: 6 },
+  { patterns: [/тренд\w*/i, /trend/i, /импульс/i, /импульсн\w*/i],
+    tag: 'тренд', priority: 5 },
+  { patterns: [/боков\w+/i, /флэт/i, /flat market/i, /range/i, /консолидац/i],
+    tag: 'боковик', priority: 5 },
+
+  // ── Макро / Рынок ─────────────────────────────────────────
+  { patterns: [/ключ\w+ ставк/i, /ставка ЦБ/i, /цб рф/i, /центробанк/i, /банк росси/i],
+    tag: 'ЦБ РФ', priority: 7 },
+  { patterns: [/инфляц/i, /inflation/i, /ИПЦ\b/i, /\bCPI\b/i],
+    tag: 'инфляция', priority: 6 },
+  { patterns: [/нефть/i, /\bBrent\b/i, /\bBRZ\b/i, /\bBRH\b/i, /crude oil/i, /\bWTI\b/i],
+    tag: 'нефть', priority: 8 },
+  { patterns: [/санкци/i, /sanction/i],
+    tag: 'санкции', priority: 7 },
+  { patterns: [/дивиденд\w*/i, /dividend/i, /ДИВГЭП/i, /дивидендный гэп/i],
+    tag: 'дивиденды', priority: 6 },
+  { patterns: [/отчётность/i, /отчет\w*/i, /МСФО/i, /РСБУ/i, /earnings/i, /квартальн\w+ результат/i],
+    tag: 'отчётность', priority: 6 },
+
+  // ── Торговые инструменты ──────────────────────────────────
+  { patterns: [/стратеги\w+/i, /торговая идея/i, /торговый план/i, /сетап/i, /setup/i],
+    tag: 'стратегия', priority: 6 },
+  { patterns: [/сигнал\w*/i, /signal/i, /точка входа/i, /entry/i],
+    tag: 'сигнал', priority: 5 },
+  { patterns: [/риск.менеджмент/i, /стоп.лосс/i, /stop loss/i, /тейк.профит/i],
+    tag: 'риск-менеджмент', priority: 6 },
+];
+
+/**
+ * Analyse text and return suggested tags sorted by priority and frequency
+ * @param {string} text — combined title + content
+ * @returns {string[]} — array of unique tag names
+ */
+function generateTagsFromText(text) {
+  if (!text || text.trim().length < 10) return [];
+
+  const found = new Map(); // tag → {priority, count}
+
+  for (const entry of HASHTAG_DICTIONARY) {
+    let count = 0;
+    for (const pattern of entry.patterns) {
+      const matches = text.match(new RegExp(pattern.source, 'gi'));
+      if (matches) count += matches.length;
+    }
+    if (count > 0) {
+      found.set(entry.tag, {
+        priority: entry.priority,
+        count,
+        score: entry.priority * 2 + count,
+      });
+    }
+  }
+
+  // Sort by score descending, return top 8 tags
+  return [...found.entries()]
+    .sort((a, b) => b[1].score - a[1].score)
+    .slice(0, 8)
+    .map(([tag]) => tag);
+}
+
+/**
+ * Render suggestion chips under the tags input
+ */
+function renderTagSuggestions(suggested) {
+  const container = document.getElementById('tags-suggestions');
+  const input     = document.getElementById('post-tags-input');
+  if (!container || !input) return;
+
+  container.hidden = false;
+  container.innerHTML = '';
+
+  if (suggested.length === 0) {
+    container.innerHTML = '<span class="tags-suggestions-empty">Ничего не найдено. Напиши больше текста.</span>';
+    return;
+  }
+
+  // Label
+  const label = document.createElement('div');
+  label.className = 'tags-suggestions-label';
+  label.textContent = 'НАЙДЕНО ТЕГОВ — КЛИКНИ ЧТОБЫ ДОБАВИТЬ:';
+  container.appendChild(label);
+
+  // Current tags in the input
+  const current = input.value.split(',').map(t => t.trim().toLowerCase()).filter(Boolean);
+
+  suggested.forEach(tag => {
+    const alreadyAdded = current.includes(tag.toLowerCase());
+    const chip = document.createElement('button');
+    chip.type = 'button';
+    chip.className = `tag-suggestion ${alreadyAdded ? 'exists' : 'new'}`;
+    chip.innerHTML = alreadyAdded
+      ? `<span>${tag}</span><span class="tag-add-icon">✓</span>`
+      : `<span>${tag}</span><span class="tag-add-icon">+</span>`;
+    chip.title = alreadyAdded ? 'Уже добавлен' : `Добавить тег «${tag}»`;
+    chip.disabled = alreadyAdded;
+    chip.setAttribute('aria-pressed', alreadyAdded ? 'true' : 'false');
+
+    if (!alreadyAdded) {
+      chip.addEventListener('click', () => {
+        const val = input.value.trim();
+        input.value = val ? `${val}, ${tag}` : tag;
+        // Re-render to update which tags are already added
+        renderTagSuggestions(suggested);
+      });
+    }
+
+    container.appendChild(chip);
+  });
+}
+
+/**
+ * Main auto-tag trigger
+ */
+function triggerAutoTags() {
+  const btn     = document.getElementById('auto-tags-btn');
+  const title   = document.getElementById('post-title-input')?.value || '';
+  const content = mde?.value() || '';
+  const combined = `${title} ${content}`;
+
+  if (combined.trim().length < 20) {
+    const container = document.getElementById('tags-suggestions');
+    if (container) {
+      container.hidden = false;
+      container.innerHTML = '<span class="tags-suggestions-empty">Введи заголовок или содержание поста для анализа.</span>';
+    }
+    return;
+  }
+
+  btn?.classList.add('loading');
+  // Small async delay to show loading state
+  setTimeout(() => {
+    const tags = generateTagsFromText(combined);
+    renderTagSuggestions(tags);
+    btn?.classList.remove('loading');
+  }, 150);
+}
+
+
 async function ghGet(path) {
   const res = await fetch(`${API_BASE}${path}`, {
     headers: {
@@ -312,6 +540,16 @@ function initEditor() {
               'link','|','preview','side-by-side','fullscreen','|','guide'],
     minHeight: '400px',
   });
+
+  // Re-run auto-tags after user stops typing in editor (debounced)
+  let debounceTimer = null;
+  mde.codemirror.on('change', () => {
+    clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(() => {
+      const container = document.getElementById('tags-suggestions');
+      if (container && !container.hidden) triggerAutoTags();
+    }, 600);
+  });
 }
 
 // ── Auto-generate slug from title ────────────────────────────
@@ -324,9 +562,25 @@ function setupSlugAutoGen() {
     if (!slugInput.dataset.manual) {
       slugInput.value = slugify(titleInput.value);
     }
+    // Re-render suggestions if panel already open
+    const container = document.getElementById('tags-suggestions');
+    if (container && !container.hidden) triggerAutoTags();
   });
   slugInput.addEventListener('input', () => {
     slugInput.dataset.manual = 'true';
+  });
+}
+
+// ── Auto-tags wiring ──────────────────────────────────────────
+function setupAutoTags() {
+  const btn = document.getElementById('auto-tags-btn');
+  if (!btn) return;
+  btn.addEventListener('click', triggerAutoTags);
+
+  // Re-render chip states when user manually edits tags field
+  document.getElementById('post-tags-input')?.addEventListener('input', () => {
+    const container = document.getElementById('tags-suggestions');
+    if (container && !container.hidden) triggerAutoTags();
   });
 }
 
@@ -396,6 +650,7 @@ document.addEventListener('DOMContentLoaded', () => {
       setupTabs();
       setupPreview();
       setupSlugAutoGen();
+      setupAutoTags();
       document.getElementById('publish-btn')?.addEventListener('click', publishPost);
     } catch (err) {
       if (authError) {
@@ -434,6 +689,7 @@ document.addEventListener('DOMContentLoaded', () => {
       setupTabs();
       setupPreview();
       setupSlugAutoGen();
+      setupAutoTags();
       document.getElementById('publish-btn')?.addEventListener('click', publishPost);
     }).catch(() => {
       localStorage.removeItem(TOKEN_KEY);

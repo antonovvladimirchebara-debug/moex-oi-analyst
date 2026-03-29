@@ -83,14 +83,22 @@
 
         <div class="form-row">
           <div class="form-group">
-            <label for="post-tags-input" class="form-label">ТЕГИ (через запятую)</label>
+            <div class="form-label-row">
+              <label for="post-tags-input" class="form-label">ТЕГИ (через запятую)</label>
+              <button type="button" id="auto-tags-btn" class="btn-autotags" title="Сгенерировать теги автоматически">
+                <span class="autotags-icon">⚡</span>
+                АВТОТЕГИ
+              </button>
+            </div>
             <input type="text" id="post-tags-input" class="form-input neon-input"
                    placeholder="OI, фьючерсы, SI">
+            <div id="tags-suggestions" class="tags-suggestions" hidden
+                 aria-label="Предложения тегов" role="group"></div>
           </div>
           <div class="form-group">
             <label for="post-slug-input" class="form-label">SLUG (URL)</label>
             <input type="text" id="post-slug-input" class="form-input neon-input"
-                   placeholder="auto-generated" id="post-slug">
+                   placeholder="auto-generated">
           </div>
         </div>
 
