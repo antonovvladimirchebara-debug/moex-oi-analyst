@@ -377,9 +377,9 @@ function loadGiscus(postId) {
   const script = document.createElement('script');
   script.src = 'https://giscus.app/client.js';
   script.setAttribute('data-repo', REPO);
-  script.setAttribute('data-repo-id', '');             // filled after Giscus setup
-  script.setAttribute('data-category', 'Announcements');
-  script.setAttribute('data-category-id', '');         // filled after Giscus setup
+  script.setAttribute('data-repo-id', 'R_kgDORz1qKQ');
+  script.setAttribute('data-category', 'Ideas');
+  script.setAttribute('data-category-id', 'DIC_kwDORz1qKc4C5ibi');
   script.setAttribute('data-mapping', 'specific');
   script.setAttribute('data-term', postId);
   script.setAttribute('data-strict', '0');
