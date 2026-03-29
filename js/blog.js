@@ -408,4 +408,57 @@ document.addEventListener('DOMContentLoaded', () => {
   } else if (file === 'post.html') {
     initPostPage();
   }
+
+  initMobileNav();
 });
+
+// ── Mobile nav (hamburger) ───────────────────────────────────
+function initMobileNav() {
+  const burger = document.getElementById('nav-burger');
+  const menu   = document.getElementById('mobile-menu');
+  if (!burger || !menu) return;
+
+  function openMenu() {
+    burger.classList.add('open');
+    menu.classList.add('open');
+    burger.setAttribute('aria-expanded', 'true');
+    menu.removeAttribute('aria-hidden');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeMenu() {
+    burger.classList.remove('open');
+    menu.classList.remove('open');
+    burger.setAttribute('aria-expanded', 'false');
+    menu.setAttribute('aria-hidden', 'true');
+    document.body.style.overflow = '';
+  }
+
+  burger.addEventListener('click', () => {
+    burger.classList.contains('open') ? closeMenu() : openMenu();
+  });
+
+  // Close on link click
+  menu.querySelectorAll('.mobile-link').forEach(link => {
+    link.addEventListener('click', closeMenu);
+  });
+
+  // Close on outside tap
+  document.addEventListener('click', (e) => {
+    if (menu.classList.contains('open') &&
+        !menu.contains(e.target) &&
+        !burger.contains(e.target)) {
+      closeMenu();
+    }
+  });
+
+  // Close on Escape
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') closeMenu();
+  });
+
+  // Close when viewport becomes desktop
+  window.addEventListener('resize', () => {
+    if (window.innerWidth > 768) closeMenu();
+  });
+}

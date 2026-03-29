@@ -79,8 +79,22 @@
       <div class="nav-ticker" aria-hidden="true">
         <span class="ticker-text" id="market-ticker">MOEX: АНАЛИЗ РЫНКА ● ОТКРЫТЫЙ ИНТЕРЕС ● ФЬЮЧЕРСЫ ●</span>
       </div>
+      <button class="nav-burger" id="nav-burger" aria-label="Открыть меню" aria-expanded="false" aria-controls="mobile-menu">
+        <span></span><span></span><span></span>
+      </button>
     </div>
   </nav>
+  <!-- Mobile menu -->
+  <div class="mobile-menu" id="mobile-menu" aria-hidden="true" role="dialog" aria-label="Мобильное меню">
+    <nav class="mobile-menu-links">
+      <a href="index.html" class="mobile-link active">ГЛАВНАЯ</a>
+      <a href="blog.html" class="mobile-link">БЛОГ</a>
+      <a href="index.html#about" class="mobile-link">ОБО МНЕ</a>
+    </nav>
+    <div class="mobile-menu-ticker" aria-live="polite">
+      <span class="ticker-text" id="mobile-ticker">MOEX: АНАЛИЗ РЫНКА ● ОТКРЫТЫЙ ИНТЕРЕС ● ФЬЮЧЕРСЫ ●</span>
+    </div>
+  </div>
 
   <!-- HERO SECTION -->
   <header class="hero" role="banner">

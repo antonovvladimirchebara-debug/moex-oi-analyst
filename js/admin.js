@@ -695,4 +695,25 @@ document.addEventListener('DOMContentLoaded', () => {
       localStorage.removeItem(TOKEN_KEY);
     });
   }
+
+  // Mobile nav
+  const burger = document.getElementById('nav-burger');
+  const mobileMenu = document.getElementById('mobile-menu');
+  if (burger && mobileMenu) {
+    burger.addEventListener('click', () => {
+      const open = burger.classList.toggle('open');
+      mobileMenu.classList.toggle('open', open);
+      burger.setAttribute('aria-expanded', String(open));
+      open ? mobileMenu.removeAttribute('aria-hidden') : mobileMenu.setAttribute('aria-hidden', 'true');
+      document.body.style.overflow = open ? 'hidden' : '';
+    });
+    mobileMenu.querySelectorAll('.mobile-link').forEach(l => l.addEventListener('click', () => {
+      burger.classList.remove('open');
+      mobileMenu.classList.remove('open');
+      mobileMenu.setAttribute('aria-hidden', 'true');
+      document.body.style.overflow = '';
+    }));
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') burger.click(); });
+    window.addEventListener('resize', () => { if (window.innerWidth > 768 && burger.classList.contains('open')) burger.click(); });
+  }
 });
