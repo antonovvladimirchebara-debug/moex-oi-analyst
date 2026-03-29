@@ -210,6 +210,30 @@
     </div>
   </section>
 
+  <!-- MOEX NEWS -->
+  <section id="news-widget" class="news-section" aria-labelledby="news-heading">
+    <div class="news-inner">
+      <div class="rates-header">
+        <div class="rates-title-group">
+          <span class="rates-icon" aria-hidden="true">◈</span>
+          <h2 id="news-heading" class="rates-title">НОВОСТИ БИРЖИ</h2>
+          <span class="rates-source">MOEX ISS</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:1rem;">
+          <span id="news-status" class="rates-status">ЗАГРУЗКА...</span>
+          <button id="news-refresh-btn" class="news-refresh-btn" aria-label="Обновить новости">⟳ ОБНОВИТЬ</button>
+        </div>
+      </div>
+      <div id="news-list" class="news-list" role="feed" aria-label="Топ 5 новостей Московской биржи">
+        <!-- filled by moex-news.js -->
+      </div>
+      <p class="rates-disclaimer">
+        Источник: MOEX ISS публичный API. Обновление каждые 30 мин.
+        Ссылки ведут на <a href="https://www.moex.com/n" target="_blank" rel="noopener noreferrer">moex.com</a>.
+      </p>
+    </div>
+  </section>
+
   <!-- LATEST POSTS -->
   <main id="main-content">
     <section id="latest-posts" class="section-posts" aria-labelledby="posts-heading">
@@ -289,5 +313,6 @@
   <script src="js/blog.js" defer></script>
   <script src="js/moex-rates.js" defer></script>
   <script src="js/trading-hours.js" defer></script>
+  <script src="js/moex-news.js" defer></script>
 </body>
 </html>
