@@ -1,250 +1,250 @@
 /**
  * moex-rates.js — Live MOEX ISS currency rates widget
  *
- * Data source: MOEX ISS public API (no auth required)
- * https://iss.moex.com/iss/statistics/engines/currency/markets/selt/rates.json
+ * Endpoint: CETS board securities marketdata (batch)
+ * Columns actually returned: SECID, WAPRICE, LAST, MARKETPRICE,
+ *   OPEN, HIGH, LOW, BID, OFFER, LASTTOPREVPRICE
  *
- * Updates every 30 seconds during trading hours (10:00–23:50 MSK).
- * Outside trading hours shows last known values with "закрыто" indicator.
+ * Price priority: WAPRICE → LAST → MARKETPRICE
+ * Updates every 30 sec during trading hours (10:00–23:50 MSK).
  */
 
-const MOEX_RATES_URL =
-  'https://iss.moex.com/iss/statistics/engines/currency/markets/selt/rates.json' +
-  '?iss.meta=off&iss.only=wap_rates';
+const CETS_URL =
+  'https://iss.moex.com/iss/engines/currency/markets/selt/boards/CETS/securities.json' +
+  '?iss.meta=off&iss.only=marketdata' +
+  '&securities=USD000UTSTOM,EUR_RUB__TOM,CNYRUB_TOM,GLDRUB_TOM';
 
-// Desired instruments in display order
 const WANTED = [
-  { secid: 'USDRUS',  label: 'USD/₽', flag: '🇺🇸' },
-  { secid: 'EURRUS',  label: 'EUR/₽', flag: '🇪🇺' },
-  { secid: 'CNYRUB',  label: 'CNY/₽', flag: '🇨🇳' },
-  { secid: 'GBPRUS',  label: 'GBP/₽', flag: '🇬🇧' },
+  { secid: 'USD000UTSTOM', label: 'USD/₽', flag: '🇺🇸', name: 'Доллар' },
+  { secid: 'EUR_RUB__TOM', label: 'EUR/₽', flag: '🇪🇺', name: 'Евро'   },
+  { secid: 'CNYRUB_TOM',   label: 'CNY/₽', flag: '🇨🇳', name: 'Юань'   },
+  { secid: 'GLDRUB_TOM',   label: 'XAU/₽', flag: '🥇', name: 'Золото' },
 ];
 
-// Fallback: SI/ED futures from MOEX (always has data)
-const FUTURES_URL =
-  'https://iss.moex.com/iss/engines/futures/markets/forts/securities.json' +
-  '?iss.meta=off&iss.only=marketdata&securities=SIM5,SiH5,SiM5,SiU5,SiZ5';
-
 let lastRates = {};
-let updateInterval = null;
-let retryCount = 0;
 
-// ── Moscow time helpers ───────────────────────────────────────
-function getMoscowHour() {
+// ── Moscow time ───────────────────────────────────────────────
+function getMsk() {
   const now = new Date();
-  const utc = now.getTime() + now.getTimezoneOffset() * 60000;
-  const msk = new Date(utc + 3 * 3600000);
-  return { h: msk.getHours(), m: msk.getMinutes(), msk };
+  return new Date(now.getTime() + now.getTimezoneOffset() * 60000 + 3 * 3600000);
 }
-
 function isTradingHours() {
-  const { h, m } = getMoscowHour();
-  const totalMin = h * 60 + m;
-  // MOEX SELT currency: 10:00–23:50 MSK
-  return totalMin >= 600 && totalMin < 1430;
+  const m = getMsk();
+  const t = m.getHours() * 60 + m.getMinutes();
+  return t >= 600 && t < 1430; // 10:00–23:50
 }
-
-function formatMskTime(date) {
-  const utc = date.getTime() + date.getTimezoneOffset() * 60000;
-  const msk = new Date(utc + 3 * 3600000);
-  return msk.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+function mskTimeStr() {
+  return getMsk().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
 }
 
 // ── Number formatting ─────────────────────────────────────────
-function fmt(val) {
+function fmt(val, decimals = 4) {
   if (val == null || val === 0) return '—';
   return Number(val).toLocaleString('ru-RU', {
-    minimumFractionDigits: 4,
-    maximumFractionDigits: 4,
+    minimumFractionDigits: decimals,
+    maximumFractionDigits: decimals,
   });
 }
 
-function fmtChange(cur, prev) {
-  if (!cur || !prev || prev === 0) return null;
-  const pct = ((cur - prev) / prev) * 100;
-  return { pct, abs: cur - prev };
-}
-
-// ── Fetch from MOEX ISS ───────────────────────────────────────
+// ── Fetch from MOEX CETS board ────────────────────────────────
 async function fetchRates() {
-  const res = await fetch(MOEX_RATES_URL + '&_=' + Date.now(), {
+  const res = await fetch(CETS_URL + '&_=' + Date.now(), {
     signal: AbortSignal.timeout(8000),
   });
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   const json = await res.json();
 
-  const cols = json.wap_rates?.columns;
-  const data = json.wap_rates?.data;
-  if (!cols || !data) throw new Error('No data');
+  const cols = json.marketdata?.columns;
+  const data = json.marketdata?.data;
+  if (!cols || !data) throw new Error('No marketdata');
 
-  const idx = (name) => cols.indexOf(name);
-  const iName    = idx('SHORTNAME') >= 0 ? idx('SHORTNAME') : idx('NAME');
-  const iPrice   = idx('WAPRICE');
-  const iBid     = idx('BID');
-  const iOffer   = idx('OFFER');
-  const iOpen    = idx('OPEN');
-  const iLow     = idx('LOW');
-  const iHigh    = idx('HIGH');
-  const iVol     = idx('VOLRUB');
-  const iSystime = idx('SYSTIME');
+  const col = name => cols.indexOf(name);
+  const iSecid  = col('SECID');
+  const iWap    = col('WAPRICE');
+  const iLast   = col('LAST');
+  const iMp     = col('MARKETPRICE');
+  const iOpen   = col('OPEN');
+  const iHigh   = col('HIGH');
+  const iLow    = col('LOW');
+  const iBid    = col('BID');
+  const iOffer  = col('OFFER');
+  const iLtp    = col('LASTTOPREVPRICE');  // абс. изм. к пред. закрытию
+  const iLtpPct = col('WAPTOPREVWAPRICEPRCNT'); // % изм. WAP
 
   const rates = {};
   data.forEach(row => {
-    const name = row[iName];
-    if (!name) return;
-    rates[name] = {
-      name,
-      price:   row[iPrice],
+    const secid = row[iSecid];
+    if (!secid) return;
+    const price = row[iWap] || row[iLast] || row[iMp] || null;
+    rates[secid] = {
+      secid,
+      price,
+      open:    row[iOpen],
+      high:    row[iHigh],
+      low:     row[iLow],
       bid:     row[iBid],
       offer:   row[iOffer],
-      open:    row[iOpen],
-      low:     row[iLow],
-      high:    row[iHigh],
-      volRub:  row[iVol],
-      systime: row[iSystime],
+      ltp:     row[iLtp],    // изменение к пред. закрытию (абс.)
+      ltpPct:  row[iLtpPct], // % к пред. WAP
     };
   });
-
   return rates;
 }
 
-// ── Build ticker string for nav ───────────────────────────────
-function buildTickerText(rates) {
-  const parts = [];
-  for (const { secid, label } of WANTED) {
-    const r = rates[secid];
-    if (!r || !r.price) continue;
-    const prev = lastRates[secid]?.price;
-    const arrow = prev ? (r.price > prev ? '▲' : r.price < prev ? '▼' : '●') : '●';
-    parts.push(`${label} ${fmt(r.price)} ${arrow}`);
-  }
-  return parts.length
-    ? parts.join('  ⬥  ') + '  ⬥  MOEX ISS'
-    : 'MOEX: АНАЛИЗ РЫНКА ● ОТКРЫТЫЙ ИНТЕРЕС ● ФЬЮЧЕРСЫ ●';
+// ── Direction helpers ─────────────────────────────────────────
+function getDir(ltp) {
+  if (ltp == null) return 'flat';
+  if (ltp > 0)  return 'up';
+  if (ltp < 0)  return 'down';
+  return 'flat';
+}
+function getDirIcon(dir) {
+  return dir === 'up' ? '▲' : dir === 'down' ? '▼' : '●';
 }
 
-// ── Render main widget ────────────────────────────────────────
+// Вычисляем % изменение от открытия (если есть open)
+function calcPct(price, open) {
+  if (!price || !open || open === 0) return null;
+  return ((price - open) / open) * 100;
+}
+
+// ── Build nav ticker text ─────────────────────────────────────
+function updateNavTicker(rates) {
+  const ticker = document.getElementById('market-ticker');
+  if (!ticker) return;
+  const parts = WANTED
+    .filter(w => rates[w.secid]?.price)
+    .map(w => {
+      const r   = rates[w.secid];
+      const dir = getDir(r.ltp);
+      const decimals = w.secid === 'GLDRUB_TOM' ? 2 : 4;
+      return `${w.label} ${fmt(r.price, decimals)} ${getDirIcon(dir)}`;
+    });
+  const text = parts.length
+    ? parts.join('  ⬥  ') + '  ⬥  MOEX'
+    : 'MOEX: АНАЛИЗ РЫНКА ● ОТКРЫТЫЙ ИНТЕРЕС ● ФЬЮЧЕРСЫ ●';
+  ticker.textContent = `${text}  ⬥  ${text}  ⬥  `;
+}
+
+// ── Render widget cards ───────────────────────────────────────
 function renderWidget(rates, trading) {
-  const board = document.getElementById('rates-board');
+  const board    = document.getElementById('rates-board');
+  const statusEl = document.getElementById('rates-status');
   if (!board) return;
 
-  const now = new Date();
-  const timeStr = formatMskTime(now);
-  const statusEl = document.getElementById('rates-status');
   if (statusEl) {
-    statusEl.textContent = trading ? `ОБНОВЛЕНО ${timeStr} МСК` : `БИРЖА ЗАКРЫТА • ДАННЫЕ ${timeStr} МСК`;
-    statusEl.className   = `rates-status ${trading ? 'live' : 'closed'}`;
+    statusEl.textContent = trading
+      ? `● ОБНОВЛЕНО ${mskTimeStr()} МСК`
+      : `○ БИРЖА ЗАКРЫТА • ПОСЛЕДНИЕ ${mskTimeStr()} МСК`;
+    statusEl.className = `rates-status ${trading ? 'live' : 'closed'}`;
   }
 
   board.innerHTML = '';
 
-  WANTED.forEach(({ secid, label, flag }) => {
-    const r = rates[secid];
-    const prev = lastRates[secid];
-    const price = r?.price || prev?.price;
-    if (!price) return;
-
-    const open  = r?.open  || prev?.open;
-    const low   = r?.low   || prev?.low;
-    const high  = r?.high  || prev?.high;
-    const bid   = r?.bid   || prev?.bid;
-    const offer = r?.offer || prev?.offer;
-
-    // Direction vs open
-    let dir = 'flat', pctStr = '', absStr = '';
-    if (open && open > 0) {
-      const delta = price - open;
-      const pct   = (delta / open) * 100;
-      dir    = delta > 0 ? 'up' : delta < 0 ? 'down' : 'flat';
-      pctStr = `${delta >= 0 ? '+' : ''}${pct.toFixed(2)}%`;
-      absStr = `${delta >= 0 ? '+' : ''}${delta.toFixed(4)}`;
+  WANTED.forEach((w, i) => {
+    const r = rates[w.secid];
+    if (!r || !r.price) {
+      // Заглушка если данных нет
+      const empty = document.createElement('div');
+      empty.className = 'rate-card rate-flat';
+      empty.innerHTML = `
+        <div class="rate-header">
+          <span class="rate-flag">${w.flag}</span>
+          <span class="rate-label">${w.label}</span>
+        </div>
+        <div class="rate-price" style="color:var(--text-muted)">—</div>
+        <div class="rate-change flat"><span class="rate-pct" style="color:var(--text-muted)">НЕТ ДАННЫХ</span></div>
+      `;
+      board.appendChild(empty);
+      return;
     }
+
+    const decimals  = w.secid === 'GLDRUB_TOM' ? 2 : 4;
+    const dir       = getDir(r.ltp);
+    const icon      = getDirIcon(dir);
+
+    // Изменение: используем ltp (абс. к пред. закрытию) если есть,
+    // иначе считаем от open
+    let absChange = r.ltp;
+    let pctChange = null;
+    if (absChange != null && r.price) {
+      const prevClose = r.price - absChange;
+      pctChange = prevClose !== 0 ? (absChange / prevClose) * 100 : null;
+    } else if (r.open && r.price) {
+      absChange = r.price - r.open;
+      pctChange = calcPct(r.price, r.open);
+    }
+
+    const pctStr = pctChange != null
+      ? `${pctChange >= 0 ? '+' : ''}${pctChange.toFixed(2)}%`
+      : '—';
+    const absStr = absChange != null
+      ? `${absChange >= 0 ? '+' : ''}${Number(absChange).toFixed(decimals)}`
+      : '';
 
     const card = document.createElement('div');
     card.className = `rate-card rate-${dir}`;
+    card.style.animationDelay = `${i * 0.08}s`;
     card.innerHTML = `
       <div class="rate-header">
-        <span class="rate-flag">${flag}</span>
-        <span class="rate-label">${label}</span>
-        <span class="rate-dir-icon">${dir === 'up' ? '▲' : dir === 'down' ? '▼' : '●'}</span>
+        <span class="rate-flag">${w.flag}</span>
+        <span class="rate-label">${w.label}</span>
+        <span class="rate-dir-icon">${icon}</span>
       </div>
-      <div class="rate-price">${fmt(price)}</div>
+      <div class="rate-price">${fmt(r.price, decimals)}</div>
       <div class="rate-change ${dir}">
-        <span class="rate-pct">${pctStr || '—'}</span>
-        <span class="rate-abs">${absStr || ''}</span>
+        <span class="rate-pct">${pctStr}</span>
+        <span class="rate-abs">${absStr}</span>
       </div>
       <div class="rate-details">
-        ${bid   ? `<span class="rate-detail"><span class="rd-label">BID</span><span class="rd-val">${fmt(bid)}</span></span>` : ''}
-        ${offer ? `<span class="rate-detail"><span class="rd-label">ASK</span><span class="rd-val">${fmt(offer)}</span></span>` : ''}
-        ${low   ? `<span class="rate-detail"><span class="rd-label">LOW</span><span class="rd-val">${fmt(low)}</span></span>` : ''}
-        ${high  ? `<span class="rate-detail"><span class="rd-label">HIGH</span><span class="rd-val">${fmt(high)}</span></span>` : ''}
+        ${r.bid   ? `<span class="rate-detail"><span class="rd-label">BID</span><span class="rd-val">${fmt(r.bid, decimals)}</span></span>` : ''}
+        ${r.offer ? `<span class="rate-detail"><span class="rd-label">ASK</span><span class="rd-val">${fmt(r.offer, decimals)}</span></span>` : ''}
+        ${r.low   ? `<span class="rate-detail"><span class="rd-label">LOW</span><span class="rd-val">${fmt(r.low, decimals)}</span></span>` : ''}
+        ${r.high  ? `<span class="rate-detail"><span class="rd-label">HIGH</span><span class="rd-val">${fmt(r.high, decimals)}</span></span>` : ''}
       </div>
     `;
     board.appendChild(card);
   });
 
-  // Placeholder if completely empty
   if (board.children.length === 0) {
-    board.innerHTML = `<div class="rates-no-data">Данные недоступны. MOEX ISS API не отвечает.</div>`;
+    board.innerHTML = `<div class="rates-no-data">Данные временно недоступны (рынок закрыт или нет связи с MOEX ISS).</div>`;
   }
 }
 
-// ── Update nav ticker ─────────────────────────────────────────
-function updateNavTicker(rates) {
-  const ticker = document.getElementById('market-ticker');
-  if (!ticker) return;
-  const text = buildTickerText(rates);
-  ticker.textContent = `${text}  ⬥  ${text}  ⬥  `;
-}
+// ── Update cycle ──────────────────────────────────────────────
+let retryCount = 0;
 
-// ── Main update cycle ─────────────────────────────────────────
 async function updateRates() {
   const trading = isTradingHours();
-  const statusEl = document.getElementById('rates-status');
-
   try {
     const rates = await fetchRates();
-
-    // Merge with prev for direction arrows
     renderWidget(rates, trading);
     updateNavTicker(rates);
     lastRates = { ...lastRates, ...rates };
     retryCount = 0;
-
-    if (statusEl) {
-      statusEl.className = `rates-status ${trading ? 'live' : 'closed'}`;
-    }
-
   } catch (err) {
     retryCount++;
-    console.warn('[MOEX rates] fetch failed:', err.message);
-
-    // Show last known data with error indicator
+    console.warn('[MOEX rates] fetch error:', err.message);
     if (Object.keys(lastRates).length > 0) {
       renderWidget(lastRates, false);
-    } else if (document.getElementById('rates-board')) {
-      document.getElementById('rates-board').innerHTML =
-        `<div class="rates-no-data">⚠ MOEX ISS временно недоступен. Повтор через ${retryCount < 3 ? 30 : 60} сек.</div>`;
+    } else {
+      const board    = document.getElementById('rates-board');
+      const statusEl = document.getElementById('rates-status');
+      if (board)    board.innerHTML = `<div class="rates-no-data">⚠ MOEX ISS временно недоступен. Повтор через ${retryCount < 3 ? 30 : 60} сек.</div>`;
+      if (statusEl) { statusEl.textContent = 'ОШИБКА СОЕДИНЕНИЯ'; statusEl.className = 'rates-status closed'; }
     }
   }
 }
 
 // ── Init ──────────────────────────────────────────────────────
 function initRates() {
-  const widget = document.getElementById('rates-widget');
-  if (!widget) return;
+  if (!document.getElementById('rates-widget')) return;
 
-  // First load immediately
   updateRates();
 
-  // During trading hours — update every 30 sec
-  // Outside — every 5 min (market may open)
   function scheduleNext() {
-    const interval = isTradingHours() ? 30000 : 300000;
-    updateInterval = setTimeout(async () => {
-      await updateRates();
-      scheduleNext();
-    }, interval);
+    const delay = isTradingHours() ? 30000 : 300000;
+    setTimeout(async () => { await updateRates(); scheduleNext(); }, delay);
   }
   scheduleNext();
 }
