@@ -1,12 +1,8 @@
 /**
  * moex-rates.js — Live MOEX ISS currency rates widget
  *
- * Endpoint: CETS board securities marketdata (batch)
- * Columns actually returned: SECID, WAPRICE, LAST, MARKETPRICE,
- *   OPEN, HIGH, LOW, BID, OFFER, LASTTOPREVPRICE
- *
- * Price priority: WAPRICE → LAST → MARKETPRICE
- * Updates every 30 sec during trading hours (10:00–23:50 MSK).
+ * Endpoint: CETS board securities marketdata (batch, public CORS)
+ * Confirmed CORS: Access-Control-Allow-Origin: * from MOEX ISS
  */
 
 const CETS_URL =
@@ -15,238 +11,250 @@ const CETS_URL =
   '&securities=USD000UTSTOM,EUR_RUB__TOM,CNYRUB_TOM,GLDRUB_TOM';
 
 const WANTED = [
-  { secid: 'USD000UTSTOM', label: 'USD/₽', flag: '🇺🇸', name: 'Доллар' },
-  { secid: 'EUR_RUB__TOM', label: 'EUR/₽', flag: '🇪🇺', name: 'Евро'   },
-  { secid: 'CNYRUB_TOM',   label: 'CNY/₽', flag: '🇨🇳', name: 'Юань'   },
-  { secid: 'GLDRUB_TOM',   label: 'XAU/₽', flag: '🥇', name: 'Золото' },
+  { secid: 'USD000UTSTOM', label: 'USD/₽', flag: '🇺🇸', dec: 4 },
+  { secid: 'EUR_RUB__TOM', label: 'EUR/₽', flag: '🇪🇺', dec: 4 },
+  { secid: 'CNYRUB_TOM',   label: 'CNY/₽', flag: '🇨🇳', dec: 4 },
+  { secid: 'GLDRUB_TOM',   label: 'XAU/₽', flag: '🥇', dec: 2 },
 ];
 
-let lastRates = {};
+let lastRates  = {};
+let ratesTimer = null;
 
-// ── Moscow time ───────────────────────────────────────────────
+// ── MSK helpers ───────────────────────────────────────────────
 function getMsk() {
   const now = new Date();
   return new Date(now.getTime() + now.getTimezoneOffset() * 60000 + 3 * 3600000);
 }
 function isTradingHours() {
-  const m = getMsk();
-  const t = m.getHours() * 60 + m.getMinutes();
-  return t >= 600 && t < 1430; // 10:00–23:50
+  const m = getMsk(), t = m.getHours() * 60 + m.getMinutes();
+  return t >= 600 && t < 1430;
 }
 function mskTimeStr() {
   return getMsk().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
 }
 
-// ── Number formatting ─────────────────────────────────────────
-function fmt(val, decimals = 4) {
-  if (val == null || val === 0) return '—';
-  return Number(val).toLocaleString('ru-RU', {
-    minimumFractionDigits: decimals,
-    maximumFractionDigits: decimals,
+// ── Safe fetch with timeout (works everywhere) ────────────────
+function fetchWithTimeout(url, ms) {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error('Timeout ' + ms + 'ms')), ms);
+    fetch(url)
+      .then(res => { clearTimeout(timer); resolve(res); })
+      .catch(err => { clearTimeout(timer); reject(err); });
   });
 }
 
-// ── Fetch from MOEX CETS board ────────────────────────────────
-async function fetchRates() {
-  const res = await fetch(CETS_URL + '&_=' + Date.now(), {
-    signal: AbortSignal.timeout(8000),
+// ── Number fmt ────────────────────────────────────────────────
+function fmt(val, dec) {
+  if (val == null || val === 0 || isNaN(val)) return '—';
+  return Number(val).toLocaleString('ru-RU', {
+    minimumFractionDigits: dec,
+    maximumFractionDigits: dec,
   });
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+}
+
+// ── Fetch rates ───────────────────────────────────────────────
+async function fetchRates() {
+  const res = await fetchWithTimeout(CETS_URL + '&_=' + Date.now(), 10000);
+  if (!res.ok) throw new Error('HTTP ' + res.status);
+
   const json = await res.json();
+  const md   = json && json.marketdata;
+  if (!md || !md.columns || !md.data) throw new Error('Нет данных marketdata');
 
-  const cols = json.marketdata?.columns;
-  const data = json.marketdata?.data;
-  if (!cols || !data) throw new Error('No marketdata');
+  const cols = md.columns;
+  const data = md.data;
 
+  // Safe column index getter
   const col = name => cols.indexOf(name);
-  const iSecid  = col('SECID');
-  const iWap    = col('WAPRICE');
-  const iLast   = col('LAST');
-  const iMp     = col('MARKETPRICE');
-  const iOpen   = col('OPEN');
-  const iHigh   = col('HIGH');
-  const iLow    = col('LOW');
-  const iBid    = col('BID');
-  const iOffer  = col('OFFER');
-  const iLtp    = col('LASTTOPREVPRICE');  // абс. изм. к пред. закрытию
-  const iLtpPct = col('WAPTOPREVWAPRICEPRCNT'); // % изм. WAP
+
+  const iSecid = col('SECID');
+  const iWap   = col('WAPRICE');
+  const iLast  = col('LAST');
+  const iMp    = col('MARKETPRICE');
+  const iOpen  = col('OPEN');
+  const iHigh  = col('HIGH');
+  const iLow   = col('LOW');
+  const iBid   = col('BID');
+  const iOffer = col('OFFER');
+  const iLtp   = col('LASTTOPREVPRICE');   // абс. изм. к пред. закрытию
+  const iWatp  = col('WAPTOPREVWAPRICE');  // абс. изм. WAP
 
   const rates = {};
-  data.forEach(row => {
-    const secid = row[iSecid];
+  data.forEach(function(row) {
+    const secid = iSecid >= 0 ? row[iSecid] : null;
     if (!secid) return;
-    const price = row[iWap] || row[iLast] || row[iMp] || null;
+
+    // Price: prefer WAPRICE, then LAST, then MARKETPRICE
+    const price = (iWap >= 0 && row[iWap])
+      ? row[iWap]
+      : (iLast >= 0 && row[iLast])
+        ? row[iLast]
+        : (iMp >= 0 && row[iMp])
+          ? row[iMp]
+          : null;
+
+    // Change vs prev close: prefer LASTTOPREVPRICE, then WAPTOPREVWAPRICE
+    const change = (iLtp >= 0 && row[iLtp] != null && row[iLtp] !== 0)
+      ? row[iLtp]
+      : (iWatp >= 0 && row[iWatp] != null && row[iWatp] !== 0)
+        ? row[iWatp]
+        : null;
+
     rates[secid] = {
       secid,
       price,
-      open:    row[iOpen],
-      high:    row[iHigh],
-      low:     row[iLow],
-      bid:     row[iBid],
-      offer:   row[iOffer],
-      ltp:     row[iLtp],    // изменение к пред. закрытию (абс.)
-      ltpPct:  row[iLtpPct], // % к пред. WAP
+      open:   iOpen  >= 0 ? row[iOpen]  : null,
+      high:   iHigh  >= 0 ? row[iHigh]  : null,
+      low:    iLow   >= 0 ? row[iLow]   : null,
+      bid:    iBid   >= 0 ? row[iBid]   : null,
+      offer:  iOffer >= 0 ? row[iOffer] : null,
+      change,
     };
   });
+
   return rates;
 }
 
-// ── Direction helpers ─────────────────────────────────────────
-function getDir(ltp) {
-  if (ltp == null) return 'flat';
-  if (ltp > 0)  return 'up';
-  if (ltp < 0)  return 'down';
-  return 'flat';
-}
-function getDirIcon(dir) {
-  return dir === 'up' ? '▲' : dir === 'down' ? '▼' : '●';
-}
-
-// Вычисляем % изменение от открытия (если есть open)
-function calcPct(price, open) {
-  if (!price || !open || open === 0) return null;
-  return ((price - open) / open) * 100;
-}
-
-// ── Build nav ticker text ─────────────────────────────────────
-function updateNavTicker(rates) {
-  const ticker = document.getElementById('market-ticker');
-  if (!ticker) return;
-  const parts = WANTED
-    .filter(w => rates[w.secid]?.price)
-    .map(w => {
-      const r   = rates[w.secid];
-      const dir = getDir(r.ltp);
-      const decimals = w.secid === 'GLDRUB_TOM' ? 2 : 4;
-      return `${w.label} ${fmt(r.price, decimals)} ${getDirIcon(dir)}`;
-    });
-  const text = parts.length
-    ? parts.join('  ⬥  ') + '  ⬥  MOEX'
-    : 'MOEX: АНАЛИЗ РЫНКА ● ОТКРЫТЫЙ ИНТЕРЕС ● ФЬЮЧЕРСЫ ●';
-  ticker.textContent = `${text}  ⬥  ${text}  ⬥  `;
-}
-
-// ── Render widget cards ───────────────────────────────────────
+// ── Render ────────────────────────────────────────────────────
 function renderWidget(rates, trading) {
   const board    = document.getElementById('rates-board');
   const statusEl = document.getElementById('rates-status');
   if (!board) return;
 
   if (statusEl) {
-    statusEl.textContent = trading
-      ? `● ОБНОВЛЕНО ${mskTimeStr()} МСК`
-      : `○ БИРЖА ЗАКРЫТА • ПОСЛЕДНИЕ ${mskTimeStr()} МСК`;
-    statusEl.className = `rates-status ${trading ? 'live' : 'closed'}`;
+    if (trading) {
+      statusEl.textContent = '● ОБНОВЛЕНО ' + mskTimeStr() + ' МСК';
+      statusEl.className   = 'rates-status live';
+    } else {
+      statusEl.textContent = '○ БИРЖА ЗАКРЫТА · ДАННЫЕ НА ' + mskTimeStr() + ' МСК';
+      statusEl.className   = 'rates-status closed';
+    }
   }
 
   board.innerHTML = '';
 
-  WANTED.forEach((w, i) => {
+  WANTED.forEach(function(w, i) {
     const r = rates[w.secid];
+
+    // No data card
     if (!r || !r.price) {
-      // Заглушка если данных нет
       const empty = document.createElement('div');
       empty.className = 'rate-card rate-flat';
-      empty.innerHTML = `
-        <div class="rate-header">
-          <span class="rate-flag">${w.flag}</span>
-          <span class="rate-label">${w.label}</span>
-        </div>
-        <div class="rate-price" style="color:var(--text-muted)">—</div>
-        <div class="rate-change flat"><span class="rate-pct" style="color:var(--text-muted)">НЕТ ДАННЫХ</span></div>
-      `;
+      empty.innerHTML =
+        '<div class="rate-header">' +
+          '<span class="rate-flag">' + w.flag + '</span>' +
+          '<span class="rate-label">' + w.label + '</span>' +
+        '</div>' +
+        '<div class="rate-price" style="color:var(--text-muted)">—</div>' +
+        '<div class="rate-change flat"><span class="rate-pct" style="font-size:0.6rem;color:var(--text-muted)">НЕТ ДАННЫХ</span></div>';
       board.appendChild(empty);
       return;
     }
 
-    const decimals  = w.secid === 'GLDRUB_TOM' ? 2 : 4;
-    const dir       = getDir(r.ltp);
-    const icon      = getDirIcon(dir);
+    const dec = w.dec;
+    const ch  = r.change;
+    const dir = ch == null ? 'flat' : ch > 0 ? 'up' : ch < 0 ? 'down' : 'flat';
+    const icon = dir === 'up' ? '▲' : dir === 'down' ? '▼' : '●';
 
-    // Изменение: используем ltp (абс. к пред. закрытию) если есть,
-    // иначе считаем от open
-    let absChange = r.ltp;
-    let pctChange = null;
-    if (absChange != null && r.price) {
-      const prevClose = r.price - absChange;
-      pctChange = prevClose !== 0 ? (absChange / prevClose) * 100 : null;
-    } else if (r.open && r.price) {
-      absChange = r.price - r.open;
-      pctChange = calcPct(r.price, r.open);
+    // % change
+    let pctStr = '—', absStr = '';
+    if (ch != null && r.price) {
+      const prevClose = r.price - ch;
+      if (prevClose && prevClose !== 0) {
+        const pct = (ch / prevClose) * 100;
+        pctStr = (pct >= 0 ? '+' : '') + pct.toFixed(2) + '%';
+        absStr = (ch >= 0 ? '+' : '') + Number(ch).toFixed(dec);
+      }
     }
 
-    const pctStr = pctChange != null
-      ? `${pctChange >= 0 ? '+' : ''}${pctChange.toFixed(2)}%`
-      : '—';
-    const absStr = absChange != null
-      ? `${absChange >= 0 ? '+' : ''}${Number(absChange).toFixed(decimals)}`
-      : '';
-
     const card = document.createElement('div');
-    card.className = `rate-card rate-${dir}`;
-    card.style.animationDelay = `${i * 0.08}s`;
-    card.innerHTML = `
-      <div class="rate-header">
-        <span class="rate-flag">${w.flag}</span>
-        <span class="rate-label">${w.label}</span>
-        <span class="rate-dir-icon">${icon}</span>
-      </div>
-      <div class="rate-price">${fmt(r.price, decimals)}</div>
-      <div class="rate-change ${dir}">
-        <span class="rate-pct">${pctStr}</span>
-        <span class="rate-abs">${absStr}</span>
-      </div>
-      <div class="rate-details">
-        ${r.bid   ? `<span class="rate-detail"><span class="rd-label">BID</span><span class="rd-val">${fmt(r.bid, decimals)}</span></span>` : ''}
-        ${r.offer ? `<span class="rate-detail"><span class="rd-label">ASK</span><span class="rd-val">${fmt(r.offer, decimals)}</span></span>` : ''}
-        ${r.low   ? `<span class="rate-detail"><span class="rd-label">LOW</span><span class="rd-val">${fmt(r.low, decimals)}</span></span>` : ''}
-        ${r.high  ? `<span class="rate-detail"><span class="rd-label">HIGH</span><span class="rd-val">${fmt(r.high, decimals)}</span></span>` : ''}
-      </div>
-    `;
+    card.className = 'rate-card rate-' + dir;
+    card.style.animationDelay = (i * 0.08) + 's';
+
+    var details = '';
+    if (r.bid)   details += '<span class="rate-detail"><span class="rd-label">BID</span><span class="rd-val">' + fmt(r.bid, dec) + '</span></span>';
+    if (r.offer) details += '<span class="rate-detail"><span class="rd-label">ASK</span><span class="rd-val">' + fmt(r.offer, dec) + '</span></span>';
+    if (r.low)   details += '<span class="rate-detail"><span class="rd-label">LOW</span><span class="rd-val">' + fmt(r.low, dec) + '</span></span>';
+    if (r.high)  details += '<span class="rate-detail"><span class="rd-label">HIGH</span><span class="rd-val">' + fmt(r.high, dec) + '</span></span>';
+
+    card.innerHTML =
+      '<div class="rate-header">' +
+        '<span class="rate-flag">' + w.flag + '</span>' +
+        '<span class="rate-label">' + w.label + '</span>' +
+        '<span class="rate-dir-icon">' + icon + '</span>' +
+      '</div>' +
+      '<div class="rate-price">' + fmt(r.price, dec) + '</div>' +
+      '<div class="rate-change ' + dir + '">' +
+        '<span class="rate-pct">' + pctStr + '</span>' +
+        '<span class="rate-abs">' + absStr + '</span>' +
+      '</div>' +
+      '<div class="rate-details">' + details + '</div>';
+
     board.appendChild(card);
   });
 
   if (board.children.length === 0) {
-    board.innerHTML = `<div class="rates-no-data">Данные временно недоступны (рынок закрыт или нет связи с MOEX ISS).</div>`;
+    board.innerHTML = '<div class="rates-no-data">Данные временно недоступны (рынок закрыт или нет связи).</div>';
+  }
+}
+
+function updateNavTicker(rates) {
+  const ticker = document.getElementById('market-ticker');
+  if (!ticker) return;
+  var parts = [];
+  WANTED.forEach(function(w) {
+    var r = rates[w.secid];
+    if (!r || !r.price) return;
+    var dir = !r.change ? '●' : r.change > 0 ? '▲' : '▼';
+    parts.push(w.label + ' ' + fmt(r.price, w.dec) + ' ' + dir);
+  });
+  if (parts.length) {
+    var text = parts.join('  ⬥  ') + '  ⬥  MOEX';
+    ticker.textContent = text + '  ⬥  ' + text + '  ⬥  ';
   }
 }
 
 // ── Update cycle ──────────────────────────────────────────────
-let retryCount = 0;
+var retryCount = 0;
 
 async function updateRates() {
-  const trading = isTradingHours();
+  var trading = isTradingHours();
   try {
-    const rates = await fetchRates();
+    var rates = await fetchRates();
     renderWidget(rates, trading);
     updateNavTicker(rates);
-    lastRates = { ...lastRates, ...rates };
+    // merge into lastRates
+    for (var k in rates) lastRates[k] = rates[k];
     retryCount = 0;
   } catch (err) {
     retryCount++;
-    console.warn('[MOEX rates] fetch error:', err.message);
+    console.warn('[MOEX rates] error:', err.message);
+    var board    = document.getElementById('rates-board');
+    var statusEl = document.getElementById('rates-status');
     if (Object.keys(lastRates).length > 0) {
+      // Show stale data with closed indicator
       renderWidget(lastRates, false);
+      if (statusEl) {
+        statusEl.textContent = '⚠ УСТАРЕВШИЕ ДАННЫЕ · ' + mskTimeStr() + ' МСК';
+        statusEl.className = 'rates-status closed';
+      }
     } else {
-      const board    = document.getElementById('rates-board');
-      const statusEl = document.getElementById('rates-status');
-      if (board)    board.innerHTML = `<div class="rates-no-data">⚠ MOEX ISS временно недоступен. Повтор через ${retryCount < 3 ? 30 : 60} сек.</div>`;
-      if (statusEl) { statusEl.textContent = 'ОШИБКА СОЕДИНЕНИЯ'; statusEl.className = 'rates-status closed'; }
+      if (board)    board.innerHTML = '<div class="rates-no-data">⚠ MOEX ISS временно недоступен. Страница обновится автоматически.</div>';
+      if (statusEl) { statusEl.textContent = 'НАРУШЕНИЕ СВЯЗИ'; statusEl.className = 'rates-status closed'; }
     }
   }
 }
 
-// ── Init ──────────────────────────────────────────────────────
+function scheduleUpdate() {
+  var delay = isTradingHours() ? 30000 : 300000;
+  ratesTimer = setTimeout(function() {
+    updateRates().then(scheduleUpdate);
+  }, delay);
+}
+
 function initRates() {
   if (!document.getElementById('rates-widget')) return;
-
-  updateRates();
-
-  function scheduleNext() {
-    const delay = isTradingHours() ? 30000 : 300000;
-    setTimeout(async () => { await updateRates(); scheduleNext(); }, delay);
-  }
-  scheduleNext();
+  updateRates().then(scheduleUpdate);
 }
 
 document.addEventListener('DOMContentLoaded', initRates);
