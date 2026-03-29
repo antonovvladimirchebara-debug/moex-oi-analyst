@@ -7,6 +7,7 @@
 - **Назначение:** Личный финансовый блог по рынку акций и фьючерсов Московской биржи
 - **Владелец:** BigFish (antonovvladimirchebara-debug)
 - **URL:** https://antonovvladimirchebara-debug.github.io/moex-oi-analyst/
+- **Репо:** https://github.com/antonovvladimirchebara-debug/moex-oi-analyst (публичное — Pages требует)
 
 ## Архитектура
 
@@ -14,32 +15,39 @@
 Посетитель → GitHub Pages (статика)
 Автор      → /admin.html → GitHub Contents API → коммит JSON → Pages rebuild
 Комментарии → Giscus (GitHub Discussions)
-3D фон     → Three.js (neon grid, particles, rings, icosahedron)
+3D фон     → Three.js (neon grid, particles, rings, icosahedron, OI-bars)
 Посты      → posts/index.json + posts/YYYY-MM-DD-slug.json
+Курсы валют → MOEX ISS CETS board API (real-time, каждые 30 сек)
+Новости    → MOEX ISS sitenews.json (каждые 30 мин)
+Расписание → Локальное расписание + живые часы МСК (каждую секунду)
 ```
 
 ## Структура файлов
 
 ```
 moex-oi-analyst/
-├── index.html            — Главная (3D hero + последние 6 постов)
+├── index.html            — Главная: 3D hero + курсы + сессии + новости + последние 6 постов
 ├── blog.html             — Все посты (фильтры + пагинация 10/страница)
 ├── post.html             — Страница поста (markdown render + Giscus)
 ├── admin.html            — Панель автора (GitHub PAT auth)
 ├── css/
-│   ├── style.css         — Deep Space Neon тема, glassmorphism
+│   ├── style.css         — Deep Space Neon тема, glassmorphism, все виджеты
 │   └── animations.css    — Keyframes, reveal, ticker, scan-line
 ├── js/
-│   ├── three-scene.js    — Three.js: neon-grid, 800 частиц, кольца, OI-bars
-│   ├── blog.js           — Fetch posts, render cards/list, пагинация, SEO
-│   └── admin.js          — GitHub API: публикация, удаление, sitemap update
+│   ├── three-scene.js    — Three.js: neon-grid, 800 частиц, кольца, OI-bars, parallax
+│   ├── blog.js           — Fetch posts, render cards/list, пагинация, SEO meta
+│   ├── admin.js          — GitHub API: публикация, удаление, sitemap update, автотеги
+│   ├── moex-rates.js     — Курсы валют с MOEX ISS CETS board (USD/EUR/CNY/GOLD)
+│   ├── trading-hours.js  — Торговые сессии, клиринги, живые часы МСК
+│   └── moex-news.js      — Топ-5 новостей с MOEX ISS sitenews.json
 ├── posts/
 │   ├── index.json        — [{id, title, date, tags, excerpt, file}]
-│   └── YYYY-MM-DD-slug.json — Полный пост с content (markdown)
+│   └── YYYY-MM-DD-slug.json — Полный пост {id, title, date, tags, excerpt, content, file}
 ├── sitemap.xml           — Авто-обновляется при каждом посте через admin.js
-├── robots.txt
-├── _config.yml
-└── README.md
+├── robots.txt            — Allow: /, Disallow: /admin.html
+├── _config.yml           — GitHub Pages Jekyll config
+├── README.md
+└── PROJECT_MAP.md        — этот файл
 ```
 
 ## Компоненты
@@ -51,42 +59,92 @@ moex-oi-analyst/
 - **Icosahedron:** wireframe геометрия, постоянное вращение
 - **DataBars:** 16 wireframe boxes — визуализация OI-гистограммы
 - **Mouse parallax:** камера следует за мышью (±3 по X, ±2 по Y)
+- **Fog:** FogExp2 для глубины сцены
 
 ### Blog system (blog.js)
 - `fetchPostsIndex()` — fetch `posts/index.json` с cache-bust
 - `fetchPostContent(file)` — fetch конкретного JSON поста
 - `initIndexPage()` — 6 последних постов в grid
-- `initBlogPage()` — все посты с фильтрацией по тегам + пагинация
-- `initPostPage()` — рендер markdown через marked.js, SEO meta, Giscus
-- `loadGiscus()` — динамическое подключение Giscus (нужно настроить repo-id)
+- `initBlogPage()` — все посты с фильтрацией по тегам + пагинация (10/страница)
+- `initPostPage()` — рендер markdown через marked.js, SEO meta, prev/next навигация, Giscus
+- `loadGiscus()` — динамическое подключение Giscus (**⚠️ нужно настроить repo-id**)
 
 ### Admin system (admin.js)
 - Auth: GitHub API `/user` → проверка login === 'antonovvladimirchebara-debug'
 - PAT хранится в `localStorage` → auto-login при следующем визите
 - `publishPost()` → коммит JSON поста + обновление index.json + sitemap.xml
 - `deletePost()` → DELETE запрос к GitHub API + обновление index.json
-- EasyMDE редактор с автосохранением
+- `generateTagsFromText()` → словарь 35+ категорий, 120+ паттернов MOEX-терминов
+- `triggerAutoTags()` → кнопка ⚡ АВТОТЕГИ + debounced re-run при изменении текста
+- EasyMDE редактор с автосохранением черновика
+
+### Курсы валют (moex-rates.js)
+- **Endpoint:** `https://iss.moex.com/iss/engines/currency/markets/selt/boards/CETS/securities.json`
+- **Инструменты:** USD000UTSTOM, EUR_RUB__TOM, CNYRUB_TOM, GLDRUB_TOM
+- **Колонки:** SECID, WAPRICE/LAST/MARKETPRICE (fallback chain), OPEN, HIGH, LOW, LASTTOPREVPRICE
+- **Обновление:** каждые 30 сек в торговое время, 5 мин — вне сессии
+- **Nav тикер:** обновляется реальными ценами с ▲▼
+
+### Торговые сессии (trading-hours.js)
+- Живые часы МСК (обновление каждую секунду)
+- Расписание акций (TQBR): 09:50 аукцион открытия → 10:00 основная → 18:40 аукцион закрытия → 18:50 постторговый → 19:05 вечерняя → 23:50
+- Расписание фьючерсов (FORTS): 09:00 → дневной клиринг 14:00–14:05 → 14:05 → вечерний клиринг 18:45–19:00 → 19:00 вечерняя → 23:50
+- Прогресс-бар сессии + обратный отсчёт до следующего события
+- Учитывает выходные дни (сб/вс → ЗАКРЫТО)
+- Раскрывающееся полное расписание (кнопка РАСПИСАНИЕ ▼)
+
+### Новости MOEX (moex-news.js)
+- **Endpoint:** `https://iss.moex.com/iss/sitenews.json?lang=ru`
+- Топ-5 последних новостей с датой, тегом, заголовком, превью
+- Время в формате "14 мин назад" / "Сегодня, 14:32"
+- Ссылки на moex.com, обновление каждые 30 мин
+- Кнопка ⟳ ОБНОВИТЬ для ручного рефреша
 
 ### SEO
 - JSON-LD Schema.org: Blog (главная), BlogPosting (посты)
 - Open Graph + Twitter Cards на всех страницах
 - Canonical URL, meta description на каждой странице
 - robots.txt с Disallow: /admin.html
-- sitemap.xml — обновляется при каждом посте
+- sitemap.xml — обновляется при каждом посте через admin.js
 
 ## Хронология
 
 | Дата | Коммит | Описание |
 |------|--------|----------|
-| 2026-03-29 | 044c00a | feat: initial launch — полный сайт-блог |
+| 2026-03-29 | 044c00a | feat: initial launch — полный сайт-блог, Three.js, admin, Giscus, SEO |
+| 2026-03-29 | 07c27ad | docs: add PROJECT_MAP.md |
+| 2026-03-29 | b45304f | feat: auto-hashtag engine — словарь 35+ категорий, 120+ паттернов MOEX |
+| 2026-03-29 | 424f7d2 | feat: live MOEX ISS currency rates board (USD/EUR/CNY/GOLD) |
+| 2026-03-29 | 13fbc59 | feat: trading hours widget — часы МСК, сессии, клиринги, расписание |
+| 2026-03-29 | 5079971 | feat: top-5 MOEX daily news from ISS API |
+| 2026-03-29 | 4d74e6a | fix: rewrite moex-rates.js для реальных колонок CETS board API |
 
 ## Текущее состояние
 
 - ✅ Сайт задеплоен на GitHub Pages, статус `built`
 - ✅ URL: https://antonovvladimirchebara-debug.github.io/moex-oi-analyst/
-- ✅ Первый тестовый пост опубликован
-- ⚠️ Giscus комментарии: нужно настроить `data-repo-id` и `data-category-id` через https://giscus.app
-- ⚠️ OG-image: файл `og-image.png` не создан (можно добавить позже)
+- ✅ Первый тестовый пост опубликован (2026-03-29, OI фьючерсы MOEX)
+- ✅ Курсы валют USD/EUR/CNY/GOLD с MOEX ISS (исправлен маппинг колонок)
+- ✅ Живые часы МСК + расписание торговых сессий
+- ✅ Топ-5 новостей MOEX с автообновлением
+- ✅ Автогенерация хештегов в admin-панели
+- ⚠️ **Giscus комментарии:** нужно настроить `data-repo-id` и `data-category-id` через https://giscus.app → обновить `js/blog.js` функция `loadGiscus()`
+- ⚠️ **OG-image:** файл `og-image.png` (1200×630px) не создан — нет превью при шеринге
+- ℹ️ Репо публичное (GitHub Pages бесплатно работает только с публичными репо)
+
+## Важные замечания
+
+### Почему репо публичное
+GitHub Pages на бесплатном аккаунте работает **только с публичными** репозиториями.
+Варианты если нужна приватность кода:
+1. GitHub Pro (~$4/мес) — Pages на приватных репо
+2. Перенос на Vercel (бесплатно + приватное репо)
+
+### Правильный URL сайта
+```
+https://antonovvladimirchebara-debug.github.io/moex-oi-analyst/
+```
+Корень `antonovvladimirchebara-debug.github.io` — 404, нужен полный путь с `/moex-oi-analyst/`
 
 ## Команды
 
@@ -98,13 +156,38 @@ python3 -m http.server 8080  # open http://localhost:8080
 # Пуш изменений
 cd /home/vladi/projects/moex-oi-analyst
 git add -A && git commit -m "fix: ..." && git push
+
+# Проверить статус GitHub Pages
+curl -s -H "Authorization: token TOKEN" \
+  https://api.github.com/repos/antonovvladimirchebara-debug/moex-oi-analyst/pages \
+  | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('status'), d.get('html_url'))"
 ```
+
+## Паттерны и антипаттерны
+
+### Добавление нового виджета
+1. Создать `js/widget-name.js` с `initWidgetName()` и `document.addEventListener('DOMContentLoaded', init...)`
+2. Добавить HTML-секцию в `index.html` с уникальным `id`
+3. Добавить CSS в `style.css` с чётким блочным комментарием
+4. Подключить `<script src="js/widget-name.js" defer>` в конце `index.html`
+
+### MOEX ISS API — известные особенности
+- `/statistics/engines/currency/markets/selt/rates.json` — только USD, CNY, GOLD (без EUR!)
+- `/engines/currency/markets/selt/boards/CETS/securities.json` — все валюты, правильный endpoint
+- Колонки реального ответа: `SECID, WAPRICE, LAST, MARKETPRICE, OPEN, HIGH, LOW, LASTTOPREVPRICE`
+- EUR вне торгов: WAPRICE=null, LAST=null, MARKETPRICE=95.xx (использовать MARKETPRICE как fallback)
+- GBP (GBPRUB_TOM) — данных нет, используем GOLD (GLDRUB_TOM)
 
 ## Словарь
 
 - **OI** — Open Interest, открытый интерес на фьючерсах
-- **SI** — Фьючерс на доллар/рубль
+- **SI** — Фьючерс на доллар/рубль (USD000UTSTOM)
 - **RI** — Фьючерс на индекс РТС
 - **GAZR** — Фьючерс на акции Газпрома
-- **Giscus** — Система комментариев на базе GitHub Discussions
+- **TQBR** — Режим торгов акциями на Московской бирже
+- **FORTS** — Срочный рынок Московской биржи (фьючерсы и опционы)
+- **CETS** — Валютный рынок MOEX (Currency Exchange Trading System)
+- **WAP** — Weighted Average Price, средневзвешенная цена
 - **PAT** — Personal Access Token GitHub
+- **Giscus** — Система комментариев на базе GitHub Discussions
+- **ISS** — Informational & Statistical Server MOEX (публичный API)
