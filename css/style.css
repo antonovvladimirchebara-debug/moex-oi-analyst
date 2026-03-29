@@ -2269,94 +2269,116 @@ body.page-post::before {
 }
 
 /* ---------- LIGHTBOX ---------- */
-.lightbox {
+/* Prevent page scroll when lightbox is open — on <html> to avoid fixed pos bugs */
+html.lb-open { overflow: hidden !important; }
+
+#lightbox {
   position: fixed;
   inset: 0;
-  z-index: 1000;
-  background: rgba(0, 0, 0, 0.92);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+  z-index: 99999;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 1rem;
-  opacity: 0;
+  padding: 1.5rem;
   pointer-events: none;
+  opacity: 0;
   transition: opacity 0.25s ease;
+  /* Must be outside all stacking contexts — appended to <html> */
 }
-.lightbox.open {
+#lightbox.open {
   opacity: 1;
   pointer-events: auto;
 }
+/* Dark backdrop as separate element (not ::before — avoids stacking issues) */
+.lightbox-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.93);
+  cursor: zoom-out;
+}
 .lightbox-img-wrap {
-  max-width: 95vw;
+  position: relative;
+  z-index: 1;
+  max-width: min(95vw, 1920px);
   max-height: 90vh;
   display: flex;
   align-items: center;
   justify-content: center;
-  overflow: auto;
-  cursor: zoom-out;
+  cursor: default;
 }
 .lightbox-img {
+  display: block;
   max-width: 100%;
   max-height: 88vh;
+  width: auto;
+  height: auto;
   object-fit: contain;
   border-radius: 4px;
-  box-shadow: 0 0 60px rgba(0,255,255,0.15), 0 0 120px rgba(0,0,0,0.8);
-  animation: lb-zoom-in 0.25s cubic-bezier(0.4,0,0.2,1);
+  box-shadow: 0 0 80px rgba(0,255,255,0.12), 0 30px 80px rgba(0,0,0,0.7);
+  opacity: 0;
+  transform: scale(0.94);
+  transition: opacity 0.3s ease, transform 0.3s cubic-bezier(0.34,1.56,0.64,1);
 }
-@keyframes lb-zoom-in {
-  from { transform: scale(0.92); opacity: 0; }
-  to   { transform: scale(1);    opacity: 1; }
+.lightbox-img.loaded {
+  opacity: 1;
+  transform: scale(1);
 }
 .lightbox-close {
-  position: absolute;
+  position: fixed;
   top: 1rem;
   right: 1.25rem;
-  font-size: 2rem;
+  z-index: 2;
+  font-size: 1.6rem;
   line-height: 1;
-  color: rgba(255,255,255,0.7);
-  background: rgba(255,255,255,0.08);
-  border: 1px solid rgba(255,255,255,0.15);
+  color: rgba(255,255,255,0.8);
+  background: rgba(10,10,30,0.7);
+  border: 1px solid rgba(0,255,255,0.3);
   border-radius: 50%;
-  width: 44px;
-  height: 44px;
+  width: 48px;
+  height: 48px;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: color 0.15s, background 0.15s;
-  z-index: 1001;
+  transition: color 0.15s, background 0.15s, box-shadow 0.15s;
 }
-.lightbox-close:hover {
-  color: var(--neon-cyan);
-  background: rgba(0,255,255,0.1);
-  border-color: var(--neon-cyan);
+.lightbox-close:hover,
+.lightbox-close:focus-visible {
+  color: #00ffff;
+  background: rgba(0,255,255,0.12);
+  border-color: #00ffff;
+  box-shadow: 0 0 16px rgba(0,255,255,0.3);
+  outline: none;
 }
 .lightbox-caption {
+  position: relative;
+  z-index: 1;
   margin-top: 0.75rem;
-  font-family: var(--font-mono);
+  font-family: 'Share Tech Mono', monospace;
   font-size: 0.7rem;
   letter-spacing: 1px;
-  color: rgba(255,255,255,0.5);
+  color: rgba(255,255,255,0.45);
   text-align: center;
   max-width: 80vw;
 }
 
-/* Images in prose — show zoom hint */
-.prose img {
-  border-radius: var(--radius-md);
+/* Images in prose — zoom hint */
+.prose img,
+.prose img.zoomable {
+  border-radius: 8px;
   max-width: 100%;
   height: auto;
   display: block;
   margin: 1.5rem auto;
-  border: 1px solid var(--border-glass);
-  transition: border-color 0.2s, box-shadow 0.2s;
+  border: 1px solid rgba(0,255,255,0.1);
+  cursor: zoom-in;
+  transition: border-color 0.2s, box-shadow 0.2s, transform 0.2s;
 }
 .prose img:hover {
-  border-color: var(--neon-cyan);
-  box-shadow: 0 0 20px rgba(0,255,255,0.15);
+  border-color: rgba(0,255,255,0.4);
+  box-shadow: 0 0 24px rgba(0,255,255,0.12);
+  transform: scale(1.005);
 }
 
 /* ---------- NO POSTS STATE ---------- */

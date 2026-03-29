@@ -398,53 +398,65 @@ function loadGiscus(postId) {
 // ── Lightbox for post images ──────────────────────────────────
 function initLightbox() {
   // Create overlay once
-  const overlay = document.createElement('div');
+  let overlay = document.getElementById('lightbox');
+  if (overlay) overlay.remove(); // reset if called again
+
+  overlay = document.createElement('div');
   overlay.id = 'lightbox';
   overlay.className = 'lightbox';
-  overlay.setAttribute('role', 'dialog');
-  overlay.setAttribute('aria-modal', 'true');
-  overlay.setAttribute('aria-label', 'Просмотр изображения');
   overlay.innerHTML = `
     <button class="lightbox-close" aria-label="Закрыть">&times;</button>
+    <div class="lightbox-backdrop"></div>
     <div class="lightbox-img-wrap">
-      <img class="lightbox-img" src="" alt="">
+      <img class="lightbox-img" src="" alt="" draggable="false">
     </div>
     <div class="lightbox-caption"></div>
   `;
-  document.body.appendChild(overlay);
+  // Append to <html> to escape all stacking contexts
+  document.documentElement.appendChild(overlay);
 
   const lbImg     = overlay.querySelector('.lightbox-img');
   const lbCaption = overlay.querySelector('.lightbox-caption');
   const lbClose   = overlay.querySelector('.lightbox-close');
+  const lbBdp     = overlay.querySelector('.lightbox-backdrop');
 
   function open(src, alt) {
-    lbImg.src = src;
-    lbImg.alt = alt || '';
+    lbImg.src = '';
     lbCaption.textContent = alt || '';
     lbCaption.hidden = !alt;
     overlay.classList.add('open');
-    document.body.style.overflow = 'hidden';
-    lbClose.focus();
+    // Prevent page scroll (on html, not body — avoids fixed positioning bugs)
+    document.documentElement.classList.add('lb-open');
+    // Load image
+    lbImg.onload = () => lbImg.classList.add('loaded');
+    lbImg.src = src;
+    lbImg.alt = alt || '';
+    lbImg.classList.remove('loaded');
+    requestAnimationFrame(() => lbClose.focus());
   }
 
   function close() {
     overlay.classList.remove('open');
-    document.body.style.overflow = '';
-    lbImg.src = '';
+    document.documentElement.classList.remove('lb-open');
+    setTimeout(() => { lbImg.src = ''; lbImg.classList.remove('loaded'); }, 300);
   }
 
   lbClose.addEventListener('click', close);
-  overlay.addEventListener('click', e => { if (e.target === overlay || e.target === overlay.querySelector('.lightbox-img-wrap')) close(); });
-  document.addEventListener('keydown', e => { if (e.key === 'Escape' && overlay.classList.contains('open')) close(); });
+  lbBdp.addEventListener('click', close);
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape' && overlay.classList.contains('open')) close();
+  });
 
   // Attach to all images inside .prose
   document.querySelectorAll('.prose img').forEach(img => {
-    img.style.cursor = 'zoom-in';
+    img.classList.add('zoomable');
     img.setAttribute('tabindex', '0');
     img.setAttribute('role', 'button');
-    img.setAttribute('aria-label', `Увеличить: ${img.alt || 'изображение'}`);
-    img.addEventListener('click', () => open(img.src, img.alt));
-    img.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') open(img.src, img.alt); });
+    img.setAttribute('title', 'Нажмите для увеличения');
+    img.addEventListener('click', e => { e.preventDefault(); open(img.src, img.alt); });
+    img.addEventListener('keydown', e => {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); open(img.src, img.alt); }
+    });
   });
 }
 document.addEventListener('DOMContentLoaded', () => {
