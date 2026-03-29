@@ -128,6 +128,28 @@
     </div>
   </header>
 
+  <!-- RATES BOARD -->
+  <section id="rates-widget" class="rates-section" aria-labelledby="rates-heading">
+    <div class="rates-inner">
+      <div class="rates-header">
+        <div class="rates-title-group">
+          <span class="rates-icon" aria-hidden="true">◈</span>
+          <h2 id="rates-heading" class="rates-title">КУРСЫ ВАЛЮТ</h2>
+          <span class="rates-source">MOEX ISS</span>
+        </div>
+        <div id="rates-status" class="rates-status" aria-live="polite">ЗАГРУЗКА...</div>
+      </div>
+      <div id="rates-board" class="rates-board" role="list" aria-label="Курсы валют Московской биржи">
+        <!-- Filled by moex-rates.js -->
+        <div class="rate-card rate-skeleton" aria-hidden="true"></div>
+        <div class="rate-card rate-skeleton" aria-hidden="true"></div>
+        <div class="rate-card rate-skeleton" aria-hidden="true"></div>
+        <div class="rate-card rate-skeleton" aria-hidden="true"></div>
+      </div>
+      <p class="rates-disclaimer">Данные: MOEX ISS публичный API. Обновление каждые 30 сек. в торговое время (10:00–23:50 МСК). Не является инвестиционной рекомендацией.</p>
+    </div>
+  </section>
+
   <!-- LATEST POSTS -->
   <main id="main-content">
     <section id="latest-posts" class="section-posts" aria-labelledby="posts-heading">
@@ -205,5 +227,6 @@
   </script>
   <script type="module" src="js/three-scene.js"></script>
   <script src="js/blog.js" defer></script>
+  <script src="js/moex-rates.js" defer></script>
 </body>
 </html>
