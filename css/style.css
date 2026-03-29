@@ -1325,15 +1325,36 @@ body > *:not(#bg-canvas):not(.scanlines):not(.noise-overlay) {
 /* EasyMDE custom overrides */
 .EasyMDEContainer .CodeMirror {
   background: rgba(0,0,0,0.4) !important;
-  color: var(--text-primary) !important;
+  color: #e0f0ff !important;
   border: 1px solid var(--border-glass) !important;
   font-family: var(--font-mono) !important;
+  font-size: 1rem !important;
   border-radius: 0 0 var(--radius-sm) var(--radius-sm) !important;
+  line-height: 1.7 !important;
 }
+.EasyMDEContainer .CodeMirror-cursor {
+  border-left-color: var(--neon-cyan) !important;
+}
+.EasyMDEContainer .CodeMirror-selected {
+  background: rgba(0,255,255,0.15) !important;
+}
+.EasyMDEContainer .CodeMirror-line {
+  color: #e0f0ff !important;
+}
+/* Markdown syntax highlighting inside CodeMirror */
+.EasyMDEContainer .cm-header   { color: var(--neon-cyan) !important; font-weight: 700 !important; }
+.EasyMDEContainer .cm-strong   { color: #ffffff !important; font-weight: 700 !important; }
+.EasyMDEContainer .cm-em       { color: var(--neon-orange) !important; }
+.EasyMDEContainer .cm-link     { color: var(--neon-cyan) !important; }
+.EasyMDEContainer .cm-url      { color: var(--neon-green) !important; }
+.EasyMDEContainer .cm-quote    { color: var(--text-secondary) !important; border-left: 3px solid var(--neon-cyan); padding-left: 0.5rem; }
+.EasyMDEContainer .cm-comment  { color: var(--text-muted) !important; }
+.EasyMDEContainer .cm-keyword  { color: var(--neon-magenta) !important; }
 .EasyMDEContainer .editor-toolbar {
   background: rgba(0,0,0,0.5) !important;
   border: 1px solid var(--border-glass) !important;
   border-bottom: none !important;
+  border-radius: var(--radius-sm) var(--radius-sm) 0 0 !important;
 }
 .EasyMDEContainer .editor-toolbar a {
   color: var(--text-secondary) !important;
@@ -1343,6 +1364,20 @@ body > *:not(#bg-canvas):not(.scanlines):not(.noise-overlay) {
   color: var(--neon-cyan) !important;
   background: rgba(0,255,255,0.05) !important;
 }
+.EasyMDEContainer .editor-toolbar i.separator {
+  border-color: var(--border-glass) !important;
+}
+.EasyMDEContainer .editor-preview,
+.EasyMDEContainer .editor-preview-side {
+  background: rgba(0,0,0,0.6) !important;
+  color: #e0f0ff !important;
+  border: 1px solid var(--border-glass) !important;
+}
+.EasyMDEContainer .CodeMirror-scroll { min-height: 300px; }
+/* Scrollbar */
+.EasyMDEContainer .CodeMirror-scroll::-webkit-scrollbar { width: 6px; }
+.EasyMDEContainer .CodeMirror-scroll::-webkit-scrollbar-track { background: rgba(0,0,0,0.2); }
+.EasyMDEContainer .CodeMirror-scroll::-webkit-scrollbar-thumb { background: var(--border-neon); border-radius: 3px; }
 
 /* ---------- RATES BOARD (MOEX ISS) ---------- */
 .rates-section {
