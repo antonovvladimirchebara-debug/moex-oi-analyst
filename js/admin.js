@@ -9,6 +9,7 @@ const TOKEN_KEY = 'moex_oi_gh_token';
 
 let mde = null;
 let currentToken = null;
+let editMode = null; // null | { id, file, originalDate, postSha }
 
 // ── Utils ─────────────────────────────────────────────────────
 function slugify(str) {
@@ -341,7 +342,7 @@ async function savePostsIndex(posts, sha) {
   return ghPut('/contents/posts/index.json', body);
 }
 
-// ── Publish a new post ────────────────────────────────────────
+// ── Publish / Update post ─────────────────────────────────────
 async function publishPost() {
   const titleEl   = document.getElementById('post-title-input');
   const tagsEl    = document.getElementById('post-tags-input');
@@ -357,23 +358,24 @@ async function publishPost() {
   if (!content) { showStatus('Введи содержание поста!', 'error'); return; }
 
   const btn = document.getElementById('publish-btn');
+  const isEditing = !!editMode;
   btn.disabled = true;
-  btn.textContent = 'ПУБЛИКАЦИЯ...';
+  btn.textContent = isEditing ? 'СОХРАНЕНИЕ...' : 'ПУБЛИКАЦИЯ...';
 
   try {
-    const date    = formatDateISO();
-    const slugVal = slugEl?.value.trim() || slugify(title);
-    const id      = `${date}-${slugVal}`;
-    const file    = `${id}.json`;
     const tags    = tagsRaw ? tagsRaw.split(',').map(t => t.trim()).filter(Boolean) : [];
+    const date    = isEditing ? editMode.originalDate : formatDateISO();
+    const slugVal = slugEl?.value.trim() || slugify(title);
+    const id      = isEditing ? editMode.id : `${date}-${slugVal}`;
+    const file    = isEditing ? editMode.file : `${id}.json`;
 
-    // 1. Save post JSON file
+    // 1. Save post JSON
     const postData = { id, title, date, tags, excerpt, content, file };
     const postContent = toBase64(JSON.stringify(postData, null, 2));
-    const existingSha = await getFileSha(`posts/${file}`);
+    const existingSha = isEditing ? editMode.postSha : await getFileSha(`posts/${file}`);
 
     const postBody = {
-      message: `feat: add post "${title}"`,
+      message: isEditing ? `fix: update post "${title}"` : `feat: add post "${title}"`,
       content: postContent,
     };
     if (existingSha) postBody.sha = existingSha;
@@ -393,25 +395,56 @@ async function publishPost() {
     // 3. Update sitemap
     await updateSitemap(posts);
 
-    showStatus(`✓ ПОСТ ОПУБЛИКОВАН: "${title}"\nURL: post.html?id=${id}`, 'success');
+    showStatus(
+      isEditing
+        ? `✓ ПОСТ ОБНОВЛЁН: "${title}"\nURL: post.html?id=${id}`
+        : `✓ ПОСТ ОПУБЛИКОВАН: "${title}"\nURL: post.html?id=${id}`,
+      'success'
+    );
 
-    // Clear form
-    titleEl.value   = '';
-    tagsEl.value    = '';
-    excerptEl.value = '';
-    slugEl.value    = '';
-    mde?.value('');
-
-    // Reload manage tab
+    clearPostForm();
+    cancelEditMode();
     await loadManagePosts();
 
   } catch (err) {
     showStatus(`ОШИБКА: ${err.message}`, 'error');
   } finally {
     btn.disabled = false;
-    btn.innerHTML = '<span class="btn-icon">▶</span>ОПУБЛИКОВАТЬ';
+    btn.innerHTML = editMode
+      ? '<span class="btn-icon">✎</span>ОБНОВИТЬ'
+      : '<span class="btn-icon">▶</span>ОПУБЛИКОВАТЬ';
   }
 }
+
+function clearPostForm() {
+  document.getElementById('post-title-input').value   = '';
+  document.getElementById('post-tags-input').value    = '';
+  document.getElementById('post-excerpt-input').value = '';
+  document.getElementById('post-slug-input').value    = '';
+  const suggestionsEl = document.getElementById('tags-suggestions');
+  if (suggestionsEl) suggestionsEl.hidden = true;
+  mde?.value('');
+}
+
+function cancelEditMode() {
+  editMode = null;
+  const btn = document.getElementById('publish-btn');
+  if (btn) btn.innerHTML = '<span class="btn-icon">▶</span>ОПУБЛИКОВАТЬ';
+  const formTitle = document.getElementById('form-mode-title');
+  if (formTitle) formTitle.textContent = 'СОЗДАТЬ ПОСТ';
+  const cancelBtn = document.getElementById('cancel-edit-btn');
+  if (cancelBtn) cancelBtn.hidden = true;
+  const slugInput = document.getElementById('post-slug-input');
+  if (slugInput) {
+    slugInput.disabled = false;
+    delete slugInput.dataset.manual;
+  }
+}
+
+window.cancelEditModeGlobal = function() {
+  cancelEditMode();
+  clearPostForm();
+};
 
 // ── Update sitemap after post ─────────────────────────────────
 async function updateSitemap(posts) {
@@ -470,11 +503,61 @@ async function loadManagePosts() {
       <span class="admin-post-date">${p.date}</span>
       <div class="admin-post-actions">
         <a href="post.html?id=${p.id}" target="_blank" class="btn-secondary" style="font-size:0.65rem;padding:0.35rem 0.8rem;">ПРОСМОТР</a>
+        <button class="btn-outline" style="font-size:0.65rem;padding:0.35rem 0.8rem;" onclick="editPost('${p.id}','${p.file}')">✎ РЕДАКТИРОВАТЬ</button>
         <button class="btn-danger" style="font-size:0.65rem;padding:0.35rem 0.8rem;" onclick="deletePost('${p.id}','${p.file}')">УДАЛИТЬ</button>
       </div>
     </div>
   `).join('');
 }
+
+// ── Edit post ─────────────────────────────────────────────────
+window.editPost = async function(id, file) {
+  try {
+    // Fetch full post content from GitHub
+    const data = await ghGet(`/contents/posts/${file}`);
+    const postJson = fromBase64(data.content.replace(/\n/g, ''));
+    const post = JSON.parse(postJson);
+
+    // Fill form
+    document.getElementById('post-title-input').value   = post.title || '';
+    document.getElementById('post-tags-input').value    = (post.tags || []).join(', ');
+    document.getElementById('post-excerpt-input').value = post.excerpt || '';
+    const slugInput = document.getElementById('post-slug-input');
+    slugInput.value = id.replace(/^\d{4}-\d{2}-\d{2}-/, '');
+    slugInput.disabled = true; // slug locked in edit mode
+    slugInput.dataset.manual = 'true';
+    if (mde) mde.value(post.content || '');
+
+    // Store edit state
+    editMode = { id, file, originalDate: post.date, postSha: data.sha };
+
+    // Update UI
+    const formTitle = document.getElementById('form-mode-title');
+    if (formTitle) formTitle.textContent = 'РЕДАКТИРОВАТЬ ПОСТ';
+    const publishBtn = document.getElementById('publish-btn');
+    if (publishBtn) publishBtn.innerHTML = '<span class="btn-icon">✎</span>ОБНОВИТЬ';
+    const cancelBtn = document.getElementById('cancel-edit-btn');
+    if (cancelBtn) cancelBtn.hidden = false;
+
+    // Switch to new-post tab
+    document.querySelectorAll('.tab-btn').forEach(b => {
+      b.classList.remove('active');
+      b.setAttribute('aria-selected', 'false');
+    });
+    document.querySelectorAll('.admin-tab-content').forEach(t => { t.hidden = true; });
+    const newPostTab = document.querySelector('[data-tab="new-post"]');
+    if (newPostTab) { newPostTab.classList.add('active'); newPostTab.setAttribute('aria-selected', 'true'); }
+    const tabContent = document.getElementById('tab-new-post');
+    if (tabContent) tabContent.hidden = false;
+
+    // Scroll to form
+    document.getElementById('tab-new-post')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    showStatus(`Редактирование: "${post.title}"`, 'success');
+
+  } catch (err) {
+    alert(`Ошибка загрузки поста: ${err.message}`);
+  }
+};
 
 // ── Delete post ───────────────────────────────────────────────
 window.deletePost = async function(id, file) {
@@ -531,14 +614,83 @@ function showPanel() {
 // ── Init Editor ───────────────────────────────────────────────
 function initEditor() {
   if (typeof EasyMDE === 'undefined') return;
+
+  // Hidden file input for image upload
+  const fileInput = document.createElement('input');
+  fileInput.type = 'file';
+  fileInput.accept = 'image/*';
+  fileInput.style.display = 'none';
+  document.body.appendChild(fileInput);
+
   mde = new EasyMDE({
     element: document.getElementById('post-content-editor'),
     spellChecker: false,
     autosave: { enabled: true, uniqueId: 'moex-post-draft', delay: 3000 },
     placeholder: '## Анализ открытого интереса\n\nВведи текст поста в формате Markdown...',
-    toolbar: ['bold','italic','heading','|','quote','unordered-list','ordered-list','|',
-              'link','|','preview','side-by-side','fullscreen','|','guide'],
+    toolbar: [
+      'bold', 'italic', 'heading', '|',
+      'quote', 'unordered-list', 'ordered-list', '|',
+      'link',
+      {
+        name: 'upload-image',
+        action: () => fileInput.click(),
+        className: 'fa fa-image',
+        title: 'Загрузить изображение с ПК',
+        text: '📷',
+      },
+      '|',
+      'preview', 'side-by-side', 'fullscreen', '|', 'guide',
+    ],
     minHeight: '400px',
+  });
+
+  // Image upload handler
+  fileInput.addEventListener('change', async () => {
+    const file = fileInput.files[0];
+    if (!file) return;
+
+    if (file.size > 10 * 1024 * 1024) {
+      showStatus('Файл слишком большой (макс. 10 МБ)', 'error');
+      fileInput.value = '';
+      return;
+    }
+
+    showStatus('⏳ Загрузка изображения...', 'success');
+
+    try {
+      // Read as base64
+      const base64 = await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = e => resolve(e.target.result.split(',')[1]);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+
+      // Upload to posts/images/
+      const ext = file.name.split('.').pop().toLowerCase();
+      const safeName = `${Date.now()}-${slugify(file.name.replace(/\.[^.]+$/, ''))}.${ext}`;
+      const ghPath = `/contents/posts/images/${safeName}`;
+      const existingSha = await getFileSha(`posts/images/${safeName}`);
+      const body = {
+        message: `feat: upload image ${safeName}`,
+        content: base64,
+      };
+      if (existingSha) body.sha = existingSha;
+      await ghPut(ghPath, body);
+
+      // Insert markdown at cursor
+      const rawUrl = `https://raw.githubusercontent.com/${REPO}/main/posts/images/${safeName}`;
+      const mdText = `\n![изображение](${rawUrl})\n`;
+      const cm = mde.codemirror;
+      const cursor = cm.getCursor();
+      cm.replaceRange(mdText, cursor);
+
+      showStatus(`✓ Изображение загружено: ${safeName}`, 'success');
+    } catch (err) {
+      showStatus(`Ошибка загрузки: ${err.message}`, 'error');
+    } finally {
+      fileInput.value = '';
+    }
   });
 
   // Re-run auto-tags after user stops typing in editor (debounced)
