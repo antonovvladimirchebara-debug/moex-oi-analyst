@@ -34,9 +34,10 @@ moex-oi-analyst/
 │   ├── style.css         — Deep Space Neon тема, glassmorphism, все виджеты
 │   └── animations.css    — Keyframes, reveal, ticker, scan-line
 ├── js/
-│   ├── three-scene.js    — Three.js: neon-grid, 800 частиц, кольца, OI-bars, parallax
-│   ├── blog.js           — Fetch posts, render cards/list, пагинация, SEO meta
-│   ├── admin.js          — GitHub API: публикация, удаление, sitemap update, автотеги
+│   ├── three-scene.js    — Three.js: neon-grid, частицы, кольца, OI-bars, parallax
+│   │                       Мобильная оптимизация: 200 частиц, 30fps, low-power, gyro
+│   ├── blog.js           — Fetch posts, render cards/list, пагинация, SEO meta, initMobileNav
+│   ├── admin.js          — GitHub API: публикация, удаление, sitemap update, автотеги, мобильное меню
 │   ├── moex-rates.js     — Курсы валют с MOEX ISS CETS board (USD/EUR/CNY/GOLD)
 │   ├── trading-hours.js  — Торговые сессии, клиринги, живые часы МСК
 │   └── moex-news.js      — Топ-5 новостей с MOEX ISS sitenews.json
@@ -118,6 +119,7 @@ moex-oi-analyst/
 | 2026-03-29 | 13fbc59 | feat: trading hours widget — часы МСК, сессии, клиринги, расписание |
 | 2026-03-29 | 5079971 | feat: top-5 MOEX daily news from ISS API |
 | 2026-03-29 | 4d74e6a | fix: rewrite moex-rates.js для реальных колонок CETS board API |
+| 2026-03-29 | 8a7c0e7 | feat: полная мобильная оптимизация — гамбургер-меню, responsive CSS, Three.js mobile mode |
 
 ## Текущее состояние
 
@@ -128,6 +130,7 @@ moex-oi-analyst/
 - ✅ Живые часы МСК + расписание торговых сессий
 - ✅ Топ-5 новостей MOEX с автообновлением
 - ✅ Автогенерация хештегов в admin-панели
+- ✅ **Мобильная оптимизация:** гамбургер-меню, responsive layout, Three.js mobile mode (30fps, 200 частиц, gyro)
 - ⚠️ **Giscus комментарии:** нужно настроить `data-repo-id` и `data-category-id` через https://giscus.app → обновить `js/blog.js` функция `loadGiscus()`
 - ⚠️ **OG-image:** файл `og-image.png` (1200×630px) не создан — нет превью при шеринге
 - ℹ️ Репо публичное (GitHub Pages бесплатно работает только с публичными репо)
