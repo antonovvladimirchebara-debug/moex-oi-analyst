@@ -1324,60 +1324,82 @@ body > *:not(#bg-canvas):not(.scanlines):not(.noise-overlay) {
 
 /* EasyMDE custom overrides */
 .EasyMDEContainer .CodeMirror {
-  background: rgba(0,0,0,0.4) !important;
-  color: #e0f0ff !important;
-  border: 1px solid var(--border-glass) !important;
-  font-family: var(--font-mono) !important;
+  background: rgba(5, 10, 25, 0.95) !important;
+  color: #c8e6ff !important;
+  border: 1px solid rgba(0,255,255,0.2) !important;
+  font-family: 'Share Tech Mono', monospace !important;
   font-size: 1rem !important;
-  border-radius: 0 0 var(--radius-sm) var(--radius-sm) !important;
+  border-radius: 0 0 8px 8px !important;
   line-height: 1.7 !important;
 }
+/* Force all text nodes inside editor to be visible */
+.EasyMDEContainer .CodeMirror *,
+.EasyMDEContainer .CodeMirror-line,
+.EasyMDEContainer .CodeMirror-line span,
+.EasyMDEContainer .CodeMirror pre.CodeMirror-line,
+.EasyMDEContainer .CodeMirror pre.CodeMirror-line-like {
+  color: #c8e6ff !important;
+}
 .EasyMDEContainer .CodeMirror-cursor {
-  border-left-color: var(--neon-cyan) !important;
+  border-left: 2px solid #00ffff !important;
 }
-.EasyMDEContainer .CodeMirror-selected {
-  background: rgba(0,255,255,0.15) !important;
+.EasyMDEContainer .CodeMirror-selected,
+.EasyMDEContainer .CodeMirror-focused .CodeMirror-selected {
+  background: rgba(0,255,255,0.18) !important;
 }
-.EasyMDEContainer .CodeMirror-line {
-  color: #e0f0ff !important;
+.EasyMDEContainer .CodeMirror-placeholder {
+  color: rgba(100,160,200,0.45) !important;
 }
-/* Markdown syntax highlighting inside CodeMirror */
-.EasyMDEContainer .cm-header   { color: var(--neon-cyan) !important; font-weight: 700 !important; }
+/* Markdown token colors */
+.EasyMDEContainer .cm-header,
+.EasyMDEContainer .cm-header-1,
+.EasyMDEContainer .cm-header-2,
+.EasyMDEContainer .cm-header-3 { color: #00ffff !important; font-weight: 700 !important; }
 .EasyMDEContainer .cm-strong   { color: #ffffff !important; font-weight: 700 !important; }
-.EasyMDEContainer .cm-em       { color: var(--neon-orange) !important; }
-.EasyMDEContainer .cm-link     { color: var(--neon-cyan) !important; }
-.EasyMDEContainer .cm-url      { color: var(--neon-green) !important; }
-.EasyMDEContainer .cm-quote    { color: var(--text-secondary) !important; border-left: 3px solid var(--neon-cyan); padding-left: 0.5rem; }
-.EasyMDEContainer .cm-comment  { color: var(--text-muted) !important; }
-.EasyMDEContainer .cm-keyword  { color: var(--neon-magenta) !important; }
+.EasyMDEContainer .cm-em       { color: #ff9900 !important; }
+.EasyMDEContainer .cm-link     { color: #00ffff !important; text-decoration: underline; }
+.EasyMDEContainer .cm-url      { color: #00ff88 !important; }
+.EasyMDEContainer .cm-quote    { color: #7a9bbf !important; border-left: 3px solid #00ffff; padding-left: 4px; }
+.EasyMDEContainer .cm-comment  { color: #3a5070 !important; }
+.EasyMDEContainer .cm-formatting { color: rgba(0,255,255,0.4) !important; }
+/* Toolbar */
 .EasyMDEContainer .editor-toolbar {
-  background: rgba(0,0,0,0.5) !important;
-  border: 1px solid var(--border-glass) !important;
+  background: rgba(0,5,15,0.9) !important;
+  border: 1px solid rgba(0,255,255,0.15) !important;
   border-bottom: none !important;
-  border-radius: var(--radius-sm) var(--radius-sm) 0 0 !important;
+  border-radius: 8px 8px 0 0 !important;
 }
+.EasyMDEContainer .editor-toolbar button,
 .EasyMDEContainer .editor-toolbar a {
-  color: var(--text-secondary) !important;
+  color: #7a9bbf !important;
 }
+.EasyMDEContainer .editor-toolbar button:hover,
 .EasyMDEContainer .editor-toolbar a:hover,
+.EasyMDEContainer .editor-toolbar button.active,
 .EasyMDEContainer .editor-toolbar a.active {
-  color: var(--neon-cyan) !important;
-  background: rgba(0,255,255,0.05) !important;
+  color: #00ffff !important;
+  background: rgba(0,255,255,0.07) !important;
+  border-color: rgba(0,255,255,0.2) !important;
 }
 .EasyMDEContainer .editor-toolbar i.separator {
-  border-color: var(--border-glass) !important;
+  border-color: rgba(0,255,255,0.1) !important;
 }
+/* Preview pane */
 .EasyMDEContainer .editor-preview,
 .EasyMDEContainer .editor-preview-side {
-  background: rgba(0,0,0,0.6) !important;
-  color: #e0f0ff !important;
-  border: 1px solid var(--border-glass) !important;
+  background: rgba(5,10,25,0.95) !important;
+  color: #c8e6ff !important;
+  border: 1px solid rgba(0,255,255,0.15) !important;
 }
-.EasyMDEContainer .CodeMirror-scroll { min-height: 300px; }
+.EasyMDEContainer .editor-preview h1,
+.EasyMDEContainer .editor-preview h2,
+.EasyMDEContainer .editor-preview h3 { color: #00ffff !important; }
+.EasyMDEContainer .editor-preview p,
+.EasyMDEContainer .editor-preview li { color: #c8e6ff !important; }
 /* Scrollbar */
-.EasyMDEContainer .CodeMirror-scroll::-webkit-scrollbar { width: 6px; }
-.EasyMDEContainer .CodeMirror-scroll::-webkit-scrollbar-track { background: rgba(0,0,0,0.2); }
-.EasyMDEContainer .CodeMirror-scroll::-webkit-scrollbar-thumb { background: var(--border-neon); border-radius: 3px; }
+.EasyMDEContainer .CodeMirror-scroll::-webkit-scrollbar { width: 6px; height: 6px; }
+.EasyMDEContainer .CodeMirror-scroll::-webkit-scrollbar-track { background: rgba(0,0,0,0.3); }
+.EasyMDEContainer .CodeMirror-scroll::-webkit-scrollbar-thumb { background: rgba(0,255,255,0.3); border-radius: 3px; }
 
 /* ---------- RATES BOARD (MOEX ISS) ---------- */
 .rates-section {

@@ -16,6 +16,25 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/easymde@2.18.0/dist/easymde.min.css">
   <script src="https://cdn.jsdelivr.net/npm/easymde@2.18.0/dist/easymde.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/marked@11.2.0/marked.min.js"></script>
+  <style>
+    /* FORCE CodeMirror dark theme — loaded after EasyMDE CSS */
+    .CodeMirror { background: rgba(5,10,25,0.95) !important; color: #c8e6ff !important; }
+    .CodeMirror *, .CodeMirror pre, .CodeMirror-line, .CodeMirror-line span { color: #c8e6ff !important; }
+    .CodeMirror-cursor { border-left: 2px solid #00ffff !important; }
+    .CodeMirror-selected, .CodeMirror-focused .CodeMirror-selected { background: rgba(0,255,255,0.18) !important; }
+    .CodeMirror-placeholder { color: rgba(100,160,200,0.4) !important; }
+    .cm-s-easymde .CodeMirror-line, .cm-s-paper .CodeMirror-line { color: #c8e6ff !important; }
+    .cm-header, .cm-header-1, .cm-header-2, .cm-header-3 { color: #00ffff !important; }
+    .cm-strong { color: #ffffff !important; }
+    .cm-em { color: #ff9900 !important; }
+    .cm-formatting { color: rgba(0,255,255,0.4) !important; }
+    .cm-url, .cm-link { color: #00ff88 !important; }
+    .cm-quote { color: #7a9bbf !important; }
+    .editor-toolbar { background: rgba(0,5,15,0.9) !important; border-color: rgba(0,255,255,0.15) !important; }
+    .editor-toolbar button, .editor-toolbar a { color: #7a9bbf !important; }
+    .editor-toolbar button:hover, .editor-toolbar a:hover { color: #00ffff !important; background: rgba(0,255,255,0.07) !important; }
+    .editor-preview, .editor-preview-side { background: rgba(5,10,25,0.95) !important; color: #c8e6ff !important; }
+  </style>
 </head>
 <body class="page-admin">
   <canvas id="bg-canvas"></canvas>
