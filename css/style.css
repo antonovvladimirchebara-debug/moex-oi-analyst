@@ -1587,7 +1587,322 @@ body > *:not(#bg-canvas):not(.scanlines):not(.noise-overlay) {
   .rates-section { padding: 1.5rem 1rem; }
 }
 
-/* ---------- RATES BOARD end ---------- */
+/* ---------- TRADING HOURS WIDGET ---------- */
+.th-section {
+  background: rgba(0, 0, 0, 0.35);
+  border-bottom: 1px solid var(--border-glass);
+  padding: 2.5rem 2rem;
+  backdrop-filter: blur(20px);
+  position: relative;
+  overflow: hidden;
+}
+.th-section::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg,
+    rgba(255,0,255,0.015) 0%,
+    transparent 50%,
+    rgba(0,255,136,0.015) 100%);
+  pointer-events: none;
+}
+
+.th-inner { max-width: 1400px; margin: 0 auto; }
+
+/* Header */
+.th-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+/* MSK Clock block */
+.th-clock-block {
+  display: flex;
+  align-items: baseline;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+.th-clock-label {
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  letter-spacing: 3px;
+  color: var(--text-muted);
+}
+.th-clock {
+  font-family: var(--font-display);
+  font-size: 1.6rem;
+  font-weight: 900;
+  letter-spacing: 3px;
+  color: var(--neon-cyan);
+  text-shadow: var(--glow-cyan);
+  min-width: 130px;
+  animation: neon-flicker 12s ease infinite;
+}
+.th-date {
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  letter-spacing: 2px;
+  color: var(--text-muted);
+}
+
+/* Two cards row */
+.th-cards-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.th-card-title {
+  font-family: var(--font-display);
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 4px;
+  color: var(--text-secondary);
+  margin-bottom: 0.6rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.th-card-label-icon { color: var(--neon-cyan); font-size: 0.5rem; }
+.th-card-hint {
+  font-family: var(--font-mono);
+  font-size: 0.55rem;
+  color: var(--text-muted);
+  background: rgba(0,255,255,0.05);
+  border: 1px solid rgba(0,255,255,0.1);
+  border-radius: 100px;
+  padding: 0.1rem 0.5rem;
+}
+
+/* Market card */
+.th-market-card {
+  border: 1px solid var(--border-glass);
+  border-radius: var(--radius-md);
+  padding: 1.25rem;
+  position: relative;
+  overflow: hidden;
+  transition: border-color var(--transition);
+  min-height: 140px;
+}
+.th-market-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+}
+
+/* Color variants */
+.th-green  { background: rgba(0, 30, 15, 0.6);  border-color: rgba(0,255,136,0.25); }
+.th-green::before  { background: linear-gradient(to right, transparent, var(--neon-green), transparent); }
+.th-red    { background: rgba(30, 5, 5, 0.6);   border-color: rgba(255,50,50,0.25); }
+.th-red::before    { background: linear-gradient(to right, transparent, #ff3333, transparent); }
+.th-orange { background: rgba(30, 20, 0, 0.6);  border-color: rgba(255,153,0,0.3); }
+.th-orange::before { background: linear-gradient(to right, transparent, var(--neon-orange), transparent); }
+.th-yellow { background: rgba(20, 20, 0, 0.6);  border-color: rgba(255,220,0,0.25); }
+.th-yellow::before { background: linear-gradient(to right, transparent, #ffdd00, transparent); }
+
+/* Badge colors */
+.th-badge-green  { color: var(--neon-green);  background: rgba(0,255,136,0.1);  border-color: rgba(0,255,136,0.3); }
+.th-badge-red    { color: #ff5555;             background: rgba(255,50,50,0.1);  border-color: rgba(255,50,50,0.3); }
+.th-badge-orange { color: var(--neon-orange);  background: rgba(255,153,0,0.1);  border-color: rgba(255,153,0,0.3); }
+.th-badge-yellow { color: #ffdd00;             background: rgba(255,220,0,0.1);  border-color: rgba(255,220,0,0.3); }
+
+.th-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.75rem;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+.th-card-meta { display: flex; align-items: center; gap: 0.5rem; }
+.th-card-icon { font-size: 1rem; }
+.th-card-badge {
+  font-family: var(--font-display);
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 2px;
+  border: 1px solid;
+  border-radius: 100px;
+  padding: 0.2rem 0.7rem;
+}
+.th-card-session {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  letter-spacing: 1px;
+  color: var(--text-secondary);
+}
+
+/* Progress bar */
+.th-progress-wrap {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+.th-progress-bar {
+  flex: 1;
+  height: 4px;
+  background: rgba(255,255,255,0.06);
+  border-radius: 2px;
+  overflow: hidden;
+}
+.th-progress-fill {
+  height: 100%;
+  border-radius: 2px;
+  transition: width 1s linear;
+}
+.th-fill-green  { background: linear-gradient(to right, rgba(0,255,136,0.4), var(--neon-green)); box-shadow: 0 0 8px rgba(0,255,136,0.4); }
+.th-fill-orange { background: linear-gradient(to right, rgba(255,153,0,0.4), var(--neon-orange)); }
+.th-fill-yellow { background: linear-gradient(to right, rgba(255,220,0,0.4), #ffdd00); }
+.th-fill-red    { background: rgba(255,50,50,0.3); }
+.th-progress-pct {
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  color: var(--text-muted);
+  min-width: 2.5rem;
+  text-align: right;
+}
+
+.th-card-footer {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+.th-next-label {
+  font-family: var(--font-mono);
+  font-size: 0.55rem;
+  letter-spacing: 2px;
+  color: var(--text-muted);
+}
+.th-next-name {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  color: var(--text-secondary);
+  flex: 1;
+}
+.th-countdown {
+  font-family: var(--font-display);
+  font-size: 1rem;
+  font-weight: 900;
+  letter-spacing: 2px;
+  color: var(--neon-cyan);
+  text-shadow: var(--glow-cyan);
+  min-width: 80px;
+  text-align: right;
+}
+
+/* Toggle button */
+.th-toggle-row {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 1rem;
+}
+.th-toggle-btn {
+  font-size: 0.65rem;
+  padding: 0.5rem 1.5rem;
+  letter-spacing: 2px;
+}
+
+/* Schedule table */
+.th-schedule {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+  margin-bottom: 1rem;
+  animation: fade-in-up 0.3s ease;
+}
+
+.th-schedule-block {
+  background: rgba(5, 5, 20, 0.5);
+  border: 1px solid var(--border-glass);
+  border-radius: var(--radius-md);
+  padding: 1.25rem;
+}
+
+.th-schedule-market {
+  font-family: var(--font-display);
+  font-size: 0.7rem;
+  font-weight: 900;
+  letter-spacing: 4px;
+  color: var(--neon-cyan);
+  margin-bottom: 0.2rem;
+}
+.th-schedule-subtitle {
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  color: var(--text-muted);
+  letter-spacing: 1px;
+  margin-bottom: 1rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--border-glass);
+}
+
+.th-schedule-rows { display: flex; flex-direction: column; gap: 0.5rem; }
+.th-schedule-row {
+  display: grid;
+  grid-template-columns: 18px 90px 1fr;
+  gap: 0.5rem 0.75rem;
+  align-items: start;
+  font-size: 0.8rem;
+}
+
+.th-row-dot {
+  font-size: 0.7rem;
+  padding-top: 0.05rem;
+  text-align: center;
+}
+.th-dot-green  { color: var(--neon-green);  }
+.th-dot-red    { color: #ff5555;             }
+.th-dot-orange { color: var(--neon-orange);  }
+.th-dot-yellow { color: #ffdd00;             }
+
+.th-row-time {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  color: var(--text-primary);
+  letter-spacing: 1px;
+  white-space: nowrap;
+}
+.th-row-name {
+  font-family: var(--font-body);
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+}
+.th-row-note {
+  grid-column: 3;
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  color: var(--text-muted);
+  letter-spacing: 0.5px;
+  grid-column: 2 / 4;
+  padding-left: calc(90px + 0.75rem);
+  margin-top: -0.1rem;
+  display: none; /* shown on wider screens */
+}
+
+@media (min-width: 900px) {
+  .th-schedule-row { grid-template-columns: 18px 90px 1fr 1fr; }
+  .th-row-note { grid-column: 4; padding-left: 0; display: block; }
+}
+
+/* Responsive */
+@media (max-width: 700px) {
+  .th-cards-row { grid-template-columns: 1fr; }
+  .th-schedule  { grid-template-columns: 1fr; }
+  .th-clock     { font-size: 1.2rem; }
+}
+@media (max-width: 480px) {
+  .th-section { padding: 1.5rem 1rem; }
+  .th-countdown { font-size: 0.85rem; }
+}
+/* ---------- TRADING HOURS end ---------- */
 .site-footer {
   border-top: 1px solid var(--border-glass);
   padding: 3rem 2rem;

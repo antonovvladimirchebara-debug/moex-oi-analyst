@@ -150,6 +150,66 @@
     </div>
   </section>
 
+  <!-- TRADING HOURS WIDGET -->
+  <section id="trading-hours-widget" class="th-section" aria-labelledby="th-heading">
+    <div class="th-inner">
+
+      <!-- Header row: title + MSK clock -->
+      <div class="th-header">
+        <div class="th-title-group">
+          <span class="rates-icon" aria-hidden="true">◈</span>
+          <h2 id="th-heading" class="rates-title">ТОРГОВЫЕ СЕССИИ</h2>
+          <span class="rates-source">MOEX</span>
+        </div>
+        <div class="th-clock-block" aria-label="Московское время">
+          <span class="th-clock-label">МСК</span>
+          <span id="th-clock" class="th-clock">--:--:--</span>
+          <span id="th-date"  class="th-date"></span>
+        </div>
+      </div>
+
+      <!-- Two market cards side by side -->
+      <div class="th-cards-row">
+        <div class="th-card-wrap">
+          <div class="th-card-title">
+            <span class="th-card-label-icon">◆</span> АКЦИИ
+            <span class="th-card-hint">TQBR</span>
+          </div>
+          <div id="th-equities-card" class="th-market-card" role="status" aria-live="polite">
+            <!-- filled by JS -->
+          </div>
+        </div>
+        <div class="th-card-wrap">
+          <div class="th-card-title">
+            <span class="th-card-label-icon">◆</span> ФЬЮЧЕРСЫ
+            <span class="th-card-hint">FORTS</span>
+          </div>
+          <div id="th-futures-card" class="th-market-card" role="status" aria-live="polite">
+            <!-- filled by JS -->
+          </div>
+        </div>
+      </div>
+
+      <!-- Toggle button -->
+      <div class="th-toggle-row">
+        <button id="th-toggle-schedule" class="btn-outline th-toggle-btn"
+                aria-expanded="false" aria-controls="th-schedule">
+          РАСПИСАНИЕ ▼
+        </button>
+      </div>
+
+      <!-- Full schedule table (collapsed by default) -->
+      <div id="th-schedule" class="th-schedule" hidden aria-label="Полное расписание торгов MOEX">
+        <!-- filled by JS -->
+      </div>
+
+      <p class="rates-disclaimer">
+        Время — Московское (UTC+3). Расписание актуально для торговых дней (пн–пт).
+        В выходные и праздничные дни биржа закрыта.
+      </p>
+    </div>
+  </section>
+
   <!-- LATEST POSTS -->
   <main id="main-content">
     <section id="latest-posts" class="section-posts" aria-labelledby="posts-heading">
@@ -228,5 +288,6 @@
   <script type="module" src="js/three-scene.js"></script>
   <script src="js/blog.js" defer></script>
   <script src="js/moex-rates.js" defer></script>
+  <script src="js/trading-hours.js" defer></script>
 </body>
 </html>
