@@ -2229,6 +2229,32 @@ body.page-post::before {
   color: var(--text-muted);
   letter-spacing: 1px;
 }
+.footer-visitors {
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  letter-spacing: 2px;
+}
+.footer-visitors-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: var(--text-muted);
+  text-decoration: none;
+  border: 1px solid rgba(0,255,255,0.1);
+  border-radius: 100px;
+  padding: 0.25rem 0.75rem;
+  transition: var(--transition-fast);
+}
+.footer-visitors-link:hover {
+  color: var(--neon-cyan);
+  border-color: rgba(0,255,255,0.3);
+  text-shadow: none;
+}
+.footer-visitors-icon {
+  color: var(--neon-cyan);
+  font-size: 0.65rem;
+  animation: pulse-icon 2s ease-in-out infinite;
+}
 
 /* ---------- NO POSTS STATE ---------- */
 .no-posts {

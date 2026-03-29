@@ -311,6 +311,13 @@
         <a href="https://github.com/antonovvladimirchebara-debug" target="_blank" rel="noopener noreferrer" role="listitem">GitHub</a>
       </div>
       <p class="footer-copy">© 2026 BigFish. Московская биржа MOEX/OI Аналитика.</p>
+      <p class="footer-visitors">
+        <a href="https://moex-oi.goatcounter.com" target="_blank" rel="noopener noreferrer" class="footer-visitors-link" aria-label="Статистика посещений">
+          <span class="footer-visitors-icon">◈</span>
+          <span>ПОСЕТИТЕЛЕЙ: </span>
+          <span id="gc-counter"></span>
+        </a>
+      </p>
     </div>
   </footer>
 
@@ -328,5 +335,17 @@
   <script src="js/moex-rates.js" defer></script>
   <script src="js/trading-hours.js" defer></script>
   <script src="js/moex-news.js" defer></script>
+  <!-- GoatCounter analytics -->
+  <script data-goatcounter="https://moex-oi.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
+  <script>
+    // Fetch total visitor count from GoatCounter API
+    fetch('https://moex-oi.goatcounter.com/counter/TOTAL.json')
+      .then(r => r.json())
+      .then(d => {
+        const el = document.getElementById('gc-counter');
+        if (el && d.count) el.textContent = Number(d.count).toLocaleString('ru-RU');
+      })
+      .catch(() => {});
+  </script>
 </body>
 </html>
