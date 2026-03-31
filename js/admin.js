@@ -754,6 +754,8 @@ function setupTabs() {
 
       if (btn.dataset.tab === 'manage-posts') {
         await loadManagePosts();
+      } else if (btn.dataset.tab === 'audio-player') {
+        initAudioTab();
       }
     });
   });
@@ -885,11 +887,15 @@ let audioConfig = { localTracks: [], yandexPlaylists: [], yandexClientId: '', ac
 let audioConfigSha = null;     // current SHA of audio-config.json in repo
 
 // ── Init audio tab ────────────────────────────────────────────────
+let _audioTabSetupDone = false;
 function initAudioTab() {
   loadAudioConfig();
-  setupAudioUpload();
-  setupAudioSave();
-  setupYandexSection();
+  if (!_audioTabSetupDone) {
+    _audioTabSetupDone = true;
+    setupAudioUpload();
+    setupAudioSave();
+    setupYandexSection();
+  }
   checkYandexOAuthReturn();
 }
 
@@ -1124,8 +1130,10 @@ function setupAudioUpload() {
   const zone = document.getElementById('audio-upload-zone');
   const input = document.getElementById('audio-file-input');
   if (!zone || !input) return;
+  if (zone.dataset.uploadInited) return;
+  zone.dataset.uploadInited = '1';
 
-  zone.addEventListener('click', () => input.click());
+  // <label for="audio-file-input"> opens dialog natively — no click handler needed
   zone.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') input.click(); });
 
   zone.addEventListener('dragover', e => {

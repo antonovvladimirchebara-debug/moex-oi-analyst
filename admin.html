@@ -196,15 +196,15 @@
           Поддерживаются MP3, WAV, OGG, FLAC, M4A до 50 МБ.
         </p>
 
-        <!-- Upload zone -->
-        <div class="audio-upload-zone" id="audio-upload-zone" role="button"
-             tabindex="0" aria-label="Загрузить аудиофайл">
+        <!-- Upload zone — label для нативного открытия файлового диалога -->
+        <label class="audio-upload-zone" id="audio-upload-zone"
+               for="audio-file-input" aria-label="Загрузить аудиофайл">
           <span class="audio-upload-icon">♪</span>
           <span class="audio-upload-label">ПЕРЕТАЩИ ИЛИ НАЖМИ ДЛЯ ЗАГРУЗКИ</span>
           <span class="audio-upload-sub">MP3 / WAV / OGG / FLAC / M4A · MAX 50 MB</span>
           <input type="file" id="audio-file-input" accept="audio/*"
                  multiple style="display:none" aria-label="Выбрать аудиофайлы">
-        </div>
+        </label>
 
         <!-- Track list -->
         <div class="audio-track-list" id="audio-track-list">
