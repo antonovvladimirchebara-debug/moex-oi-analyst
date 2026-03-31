@@ -174,6 +174,7 @@ OAuth-токен Яндекса хранится в `localStorage['moex_oi_yande
 | 2026-03-29 | 4d74e6a | fix: rewrite moex-rates.js для реальных колонок CETS board API |
 | 2026-03-29 | 8a7c0e7 | feat: полная мобильная оптимизация — гамбургер-меню, responsive CSS, Three.js mobile mode |
 | 2026-03-31 | —       | feat: аудиоплеер — neon cyberpunk, FFT visualizer, Яндекс OAuth, admin upload |
+| 2026-03-31 | 4aacbe8 | feat: SEO — статические HTML постов, GitHub Actions pre-render, evergreen контент |
 
 ## Текущее состояние
 
@@ -187,6 +188,9 @@ OAuth-токен Яндекса хранится в `localStorage['moex_oi_yande
 - ✅ **Мобильная оптимизация:** гамбургер-меню, responsive layout, Three.js mobile mode (30fps, 200 частиц, gyro)
 - ✅ **Аудиоплеер:** neon cyberpunk, canvas FFT visualizer, LOCAL (файлы из репо) + ЯНДЕКС (OAuth embed)
 - ✅ **Admin — АУДИОПЛЕЕР таб:** загрузка файлов, управление плейлистом, Яндекс OAuth, ручной ввод URL
+- ✅ **SEO pre-render:** `scripts/build-posts.js` генерирует `posts/<slug>/index.html` со всеми мета, JSON-LD; GitHub Actions автозапуск при каждом пуше в `posts/**`
+- ✅ **sitemap.xml:** обновлён на статические URL `posts/<slug>/`
+- ✅ **index.html:** секция #methodology (~900 слов), расширенный блок автора с методологией и контактами
 - ⚠️ **Giscus комментарии:** нужно настроить `data-repo-id` и `data-category-id` через https://giscus.app → обновить `js/blog.js` функция `loadGiscus()`
 - ⚠️ **OG-image:** файл `og-image.png` (1200×630px) не создан — нет превью при шеринге
 - **Audio player:** для Яндекс Музыки нужно зарегистрировать приложение на oauth.yandex.ru → Веб-сервис → Callback URI = URL admin.html
