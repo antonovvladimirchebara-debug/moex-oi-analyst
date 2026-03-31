@@ -6,12 +6,11 @@
 
 /* ── Wrapper: fixed floating top-right ────── */
 .ap-wrap {
-  position: fixed;
+  position: fixed !important;
   top: calc(var(--nav-height, 70px) + 10px);
   right: 14px;
-  z-index: 500;
+  z-index: 9999 !important;
   width: 290px;
-  /* Let it shrink when collapsed */
   transition: width 0.25s ease;
 }
 
@@ -20,30 +19,32 @@
   display: none; /* shown by .ap-collapsed */
   align-items: center;
   gap: 0.35rem;
-  padding: 0.4rem 0.85rem 0.4rem 0.65rem;
+  padding: 0.45rem 1rem 0.45rem 0.75rem;
   border-radius: 20px;
-  border: 1px solid rgba(0, 255, 255, 0.25);
-  background: rgba(5, 10, 25, 0.88);
+  border: 1px solid rgba(0, 255, 255, 0.5);
+  background: rgba(5, 10, 25, 0.95);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   color: var(--neon-cyan, #00ffff);
   font-family: var(--font-display, monospace);
-  font-size: 0.58rem;
+  font-size: 0.62rem;
   font-weight: 700;
   letter-spacing: 2px;
   cursor: pointer;
   box-shadow:
-    0 0 12px rgba(0, 255, 255, 0.1),
-    0 2px 16px rgba(0, 0, 0, 0.5);
+    0 0 18px rgba(0, 255, 255, 0.2),
+    0 2px 20px rgba(0, 0, 0, 0.7),
+    inset 0 0 12px rgba(0, 255, 255, 0.04);
   transition: all 0.2s ease;
-  margin-left: auto; /* float right inside wrapper */
   white-space: nowrap;
+  text-shadow: 0 0 8px rgba(0, 255, 255, 0.5);
 }
 
 .ap-toggle-btn:hover {
-  border-color: rgba(0, 255, 255, 0.55);
-  box-shadow: 0 0 20px rgba(0, 255, 255, 0.22), 0 2px 16px rgba(0, 0, 0, 0.5);
-  background: rgba(0, 255, 255, 0.07);
+  border-color: rgba(0, 255, 255, 0.8);
+  box-shadow: 0 0 28px rgba(0, 255, 255, 0.35), 0 2px 20px rgba(0, 0, 0, 0.7);
+  background: rgba(0, 255, 255, 0.1);
+  transform: scale(1.03);
 }
 
 .ap-toggle-note {
