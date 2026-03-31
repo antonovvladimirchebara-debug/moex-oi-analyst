@@ -1,5 +1,12 @@
 {
-  "localTracks": [],
+  "localTracks": [
+    {
+      "id": "mnemwz8t",
+      "title": "audio_2026-03-31_18-09-10",
+      "artist": "",
+      "filename": "audio_2026-03-31_18-09-10.ogg"
+    }
+  ],
   "yandexPlaylists": [],
   "yandexClientId": "",
   "activeSource": "local"
