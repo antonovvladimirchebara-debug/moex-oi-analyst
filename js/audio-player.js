@@ -37,6 +37,10 @@
     isDraggingProgress: false,
   };
 
+  // ── Constants (admin detection) ───────────────────────────────
+  const GH_TOKEN_KEY    = 'moex_oi_gh_token';
+  const AP_COLLAPSED_KEY = 'moex_oi_ap_collapsed';
+
   // ── DOM refs ──────────────────────────────────────────────────
   let audio, canvas, ctx2d;
   let elTitle, elArtist, elTimeCur, elTimeTotal;
@@ -46,15 +50,26 @@
   let elYandexPlayer, elYandexPlaylists;
   let elTrackCount;
   let visIdleEl;
+  let wrapEl;
 
-  // ── Inject HTML ───────────────────────────────────────────────
+  // ── Build compact floating HTML ───────────────────────────────
   function buildHTML() {
     const wrap = document.createElement('div');
-    wrap.className = 'ap-wrap';
+    // Start collapsed; will be uncollapsed if saved state says so
+    wrap.className = 'ap-wrap ap-collapsed';
     wrap.id = 'ap-wrap';
     wrap.setAttribute('aria-label', 'Аудиоплеер');
 
     wrap.innerHTML = `
+      <!-- Collapsed pill: click to expand -->
+      <button class="ap-toggle-btn" id="ap-toggle-btn"
+              aria-label="Открыть аудиоплеер" title="Аудиоплеер">
+        <span class="ap-toggle-note" aria-hidden="true">♪</span>
+        <span class="ap-toggle-label">AUDIO</span>
+        <span class="ap-toggle-playing-dot" id="ap-toggle-dot" aria-hidden="true"></span>
+      </button>
+
+      <!-- Full player panel -->
       <div class="ap-player" id="ap-player" role="region" aria-label="Аудиоплеер">
         <!-- Corner decorations -->
         <div class="ap-corner ap-corner-tl"></div>
@@ -68,11 +83,16 @@
             <span class="ap-label-dot"></span>
             AUDIO STREAM
           </div>
-          <span class="ap-track-count" id="ap-track-count"></span>
+          <div class="ap-header-right">
+            <span class="ap-track-count" id="ap-track-count"></span>
+            <button class="ap-btn ap-collapse-btn" id="ap-collapse-btn"
+                    title="Свернуть" aria-label="Свернуть плеер">−</button>
+          </div>
         </div>
 
-        <!-- Source tabs -->
-        <div class="ap-source-tabs" role="tablist" aria-label="Источник музыки">
+        <!-- Source tabs (ADMIN ONLY — hidden for regular visitors) -->
+        <div class="ap-source-tabs ap-admin-tabs" role="tablist"
+             aria-label="Источник музыки">
           <button class="ap-src-btn active" data-src="local"
                   role="tab" aria-selected="true">LOCAL</button>
           <button class="ap-src-btn" data-src="yandex"
@@ -81,7 +101,7 @@
 
         <!-- LOCAL MODE -->
         <div id="ap-local-mode" role="tabpanel">
-          <!-- Visualizer -->
+          <!-- Mini visualizer -->
           <div class="ap-visualizer-wrap">
             <canvas id="ap-visualizer" class="ap-visualizer"
                     aria-hidden="true"></canvas>
@@ -136,7 +156,7 @@
           </div>
         </div>
 
-        <!-- YANDEX MODE -->
+        <!-- YANDEX MODE (admin only — only visible when tabs visible) -->
         <div id="ap-yandex-mode" class="ap-yandex-mode" role="tabpanel" hidden>
           <div id="ap-yandex-player" class="ap-yandex-player">
             <div class="ap-yandex-no-playlist" id="ap-yandex-empty">
@@ -154,14 +174,44 @@
     return wrap;
   }
 
+  // ── Collapse/Expand logic ─────────────────────────────────────
+  function setCollapsed(collapsed) {
+    if (!wrapEl) return;
+    wrapEl.classList.toggle('ap-collapsed', collapsed);
+    localStorage.setItem(AP_COLLAPSED_KEY, collapsed ? '1' : '0');
+    const toggleBtn = document.getElementById('ap-toggle-btn');
+    if (toggleBtn) {
+      toggleBtn.setAttribute('aria-label', collapsed ? 'Открыть аудиоплеер' : 'Свернуть плеер');
+    }
+    // Resize canvas after expansion (was hidden before)
+    if (!collapsed) {
+      setTimeout(resizeCanvas, 50);
+    }
+  }
+
   // ── Init ──────────────────────────────────────────────────────
   async function init() {
-    // Insert player into hero section after .hero-cta
-    const heroCta = document.querySelector('.hero-cta');
-    if (!heroCta) return;
-
     const wrap = buildHTML();
-    heroCta.parentNode.insertBefore(wrap, heroCta.nextSibling);
+    wrapEl = wrap;
+
+    // Inject as fixed overlay into body (works on any page)
+    document.body.appendChild(wrap);
+
+    // ── Admin detection: show source tabs only if GitHub token present
+    const isAdmin = !!localStorage.getItem(GH_TOKEN_KEY);
+    if (isAdmin) {
+      wrap.classList.add('ap-is-admin');
+    }
+
+    // Restore collapsed state (default: collapsed)
+    const savedCollapsed = localStorage.getItem(AP_COLLAPSED_KEY);
+    // null = first visit → start collapsed; '0' = user expanded before
+    const startCollapsed = savedCollapsed !== '0';
+    setCollapsed(startCollapsed);
+
+    // Bind toggle/collapse buttons
+    document.getElementById('ap-toggle-btn')?.addEventListener('click', () => setCollapsed(false));
+    document.getElementById('ap-collapse-btn')?.addEventListener('click', () => setCollapsed(true));
 
     // Cache DOM refs
     audio          = document.createElement('audio');
@@ -439,6 +489,9 @@
     elPlayBtn.setAttribute('aria-label', state.isPlaying ? 'Пауза' : 'Воспроизвести');
     elPlayBtn.classList.toggle('playing', state.isPlaying);
     elPlayBtn.title = state.isPlaying ? 'Пауза' : 'Воспроизвести';
+    // Update toggle button dot
+    const dot = document.getElementById('ap-toggle-dot');
+    if (dot) dot.classList.toggle('active', state.isPlaying);
   }
 
   // ── Render track info ─────────────────────────────────────────
