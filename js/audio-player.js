@@ -284,6 +284,22 @@
     // Load first track metadata if local
     if (state.config.localTracks.length > 0) {
       renderTrackInfo(state.config.localTracks[0]);
+    } else {
+      // No tracks — show admin hint or idle
+      const titleEl  = document.getElementById('ap-title');
+      const artistEl = document.getElementById('ap-artist');
+      const isAdmin  = !!localStorage.getItem(GH_TOKEN_KEY);
+      if (titleEl)  titleEl.textContent  = 'НЕТ ТРЕКОВ';
+      if (artistEl) {
+        if (isAdmin) {
+          artistEl.innerHTML =
+            '<a href="admin.html" style="color:var(--neon-cyan);text-decoration:none;' +
+            'font-size:0.6rem;letter-spacing:1px;" title="Загрузить аудиофайлы в Админ → АУДИОПЛЕЕР">' +
+            '↗ загрузить в Админ → АУДИОПЛЕЕР</a>';
+        } else {
+          artistEl.textContent = '—';
+        }
+      }
     }
 
     // Load Yandex player if configured
