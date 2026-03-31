@@ -264,7 +264,7 @@
           <!-- Status/error message -->
           <div id="yandex-connect-msg" style="display:none;font-family:var(--font-mono);font-size:0.65rem;padding:0.4rem 0.75rem;border-radius:4px;margin-bottom:0.75rem;"></div>
 
-          <!-- Playlists (after connect) -->
+          <!-- Playlists from account (after OAuth connect) -->
           <div id="yandex-playlists-section" hidden>
             <div class="form-label" style="margin-bottom:0.6rem;">ПЛЕЙЛИСТЫ АККАУНТА</div>
             <div id="yandex-playlists-loading" class="ap-loading" hidden>
@@ -276,30 +276,28 @@
             <div class="yandex-playlists-grid" id="yandex-playlists-grid">
               <!-- filled by JS -->
             </div>
-            <div id="yandex-cors-warning" hidden
-                 style="font-family:var(--font-mono);font-size:0.62rem;color:var(--neon-orange);
-                        background:rgba(255,153,0,0.07);border:1px solid rgba(255,153,0,0.2);
-                        border-radius:5px;padding:0.65rem 0.85rem;margin:0.5rem 0;">
-              ⚠ API Яндекс Музыки недоступен напрямую из браузера (CORS).
-              Введи ссылку на плейлист вручную (формат: music.yandex.ru/users/LOGIN/playlists/KIND).
-            </div>
-            <div id="yandex-manual-playlist-section" style="margin-top:0.75rem;">
-              <label for="yandex-playlist-url" class="form-label">ССЫЛКА НА ПЛЕЙЛИСТ (вручную)</label>
-              <div style="display:flex;gap:0.5rem;align-items:center;">
-                <input type="url" id="yandex-playlist-url" class="form-input neon-input"
-                       placeholder="https://music.yandex.ru/users/LOGIN/playlists/KIND"
-                       style="flex:1">
-                <input type="text" id="yandex-playlist-title" class="form-input neon-input"
-                       placeholder="Название" style="max-width:140px">
-                <button class="btn-secondary" id="yandex-add-playlist-btn"
-                        style="font-size:0.6rem;padding:0.5rem 0.85rem;white-space:nowrap;">
-                  + ДОБАВИТЬ
-                </button>
-              </div>
+          </div>
+
+          <!-- Ручное добавление плейлиста — всегда видно, OAuth не нужен -->
+          <div id="yandex-manual-playlist-section" style="margin-top:1rem;">
+            <div class="form-label" style="margin-bottom:0.4rem;">ДОБАВИТЬ ПЛЕЙЛИСТ ПО ССЫЛКЕ</div>
+            <p style="font-family:var(--font-mono);font-size:0.58rem;color:var(--text-muted);margin:0 0 0.6rem;letter-spacing:0.5px;">
+              OAuth не нужен — просто вставь ссылку из Яндекс Музыки
+            </p>
+            <div style="display:flex;gap:0.5rem;align-items:center;flex-wrap:wrap;">
+              <input type="url" id="yandex-playlist-url" class="form-input neon-input"
+                     placeholder="https://music.yandex.ru/users/LOGIN/playlists/KIND"
+                     style="flex:1;min-width:200px">
+              <input type="text" id="yandex-playlist-title" class="form-input neon-input"
+                     placeholder="Название плейлиста" style="max-width:160px">
+              <button class="btn-secondary" id="yandex-add-playlist-btn"
+                      style="font-size:0.6rem;padding:0.5rem 0.85rem;white-space:nowrap;">
+                + ДОБАВИТЬ
+              </button>
             </div>
           </div>
 
-          <!-- Selected playlists list -->
+          <!-- Список выбранных плейлистов -->
           <div id="yandex-selected-section" style="margin-top:1rem;">
             <div class="form-label" style="margin-bottom:0.6rem;">ВЫБРАННЫЕ ПЛЕЙЛИСТЫ</div>
             <div id="yandex-selected-list" class="yandex-playlists-grid">
