@@ -804,6 +804,7 @@ document.addEventListener('DOMContentLoaded', () => {
       setupSlugAutoGen();
       setupAutoTags();
       document.getElementById('publish-btn')?.addEventListener('click', publishPost);
+      initAudioTab();
     } catch (err) {
       if (authError) {
         authError.textContent = err.message;
@@ -843,6 +844,7 @@ document.addEventListener('DOMContentLoaded', () => {
       setupSlugAutoGen();
       setupAutoTags();
       document.getElementById('publish-btn')?.addEventListener('click', publishPost);
+      initAudioTab();
     }).catch(() => {
       localStorage.removeItem(TOKEN_KEY);
     });
@@ -869,3 +871,666 @@ document.addEventListener('DOMContentLoaded', () => {
     window.addEventListener('resize', () => { if (window.innerWidth > 768 && burger.classList.contains('open')) burger.click(); });
   }
 });
+
+// ══════════════════════════════════════════════════════════════════
+//  AUDIO PLAYER ADMIN — Управление аудиоплеером
+// ══════════════════════════════════════════════════════════════════
+
+const AUDIO_CONFIG_PATH = 'audio-config.json';
+const AUDIO_DIR         = 'audio/';
+const YANDEX_TK_ADMIN   = 'moex_oi_yandex_token';
+const YANDEX_UID_ADMIN  = 'moex_oi_yandex_uid';
+
+let audioConfig = { localTracks: [], yandexPlaylists: [], yandexClientId: '', activeSource: 'local' };
+let audioConfigSha = null;     // current SHA of audio-config.json in repo
+
+// ── Init audio tab ────────────────────────────────────────────────
+function initAudioTab() {
+  loadAudioConfig();
+  setupAudioUpload();
+  setupAudioSave();
+  setupYandexSection();
+  checkYandexOAuthReturn();
+}
+
+// ── Load audio-config.json from GitHub ───────────────────────────
+async function loadAudioConfig() {
+  try {
+    const r = await fetch(`${API_BASE}/contents/${AUDIO_CONFIG_PATH}`, {
+      headers: { 'Authorization': `token ${currentToken}`, 'Accept': 'application/vnd.github.v3+json' }
+    });
+    if (r.ok) {
+      const data = await r.json();
+      audioConfigSha = data.sha;
+      const decoded = fromBase64(data.content.replace(/\n/g, ''));
+      audioConfig = JSON.parse(decoded);
+    }
+  } catch (_) {
+    // File doesn't exist yet — use defaults
+    audioConfigSha = null;
+  }
+  renderLocalTracksList();
+  renderSelectedYandexPlaylists();
+  updateYandexConnectionUI();
+}
+
+// ── Save audio-config.json to GitHub ─────────────────────────────
+async function saveAudioConfig(config) {
+  const content = toBase64(JSON.stringify(config, null, 2));
+  const body = {
+    message: 'feat: update audio player config',
+    content,
+    ...(audioConfigSha ? { sha: audioConfigSha } : {})
+  };
+
+  const r = await fetch(`${API_BASE}/contents/${AUDIO_CONFIG_PATH}`, {
+    method: 'PUT',
+    headers: {
+      'Authorization': `token ${currentToken}`,
+      'Accept': 'application/vnd.github.v3+json',
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(body)
+  });
+
+  if (!r.ok) {
+    const err = await r.json().catch(() => ({}));
+    throw new Error(err.message || `HTTP ${r.status}`);
+  }
+  const data = await r.json();
+  audioConfigSha = data.content.sha;
+  audioConfig = config;
+  return data;
+}
+
+// ── Upload audio file to /audio/ in repo ─────────────────────────
+async function uploadAudioFile(file) {
+  const MAX_SIZE = 50 * 1024 * 1024; // 50 MB
+  if (file.size > MAX_SIZE) {
+    throw new Error(`Файл слишком большой (${(file.size / 1024 / 1024).toFixed(1)} MB > 50 MB)`);
+  }
+
+  const filename = sanitizeFilename(file.name);
+  const path     = `${AUDIO_DIR}${filename}`;
+
+  // Check if file already exists (get SHA for update)
+  let existingSha = null;
+  try {
+    const checkR = await fetch(`${API_BASE}/contents/${path}`, {
+      headers: { 'Authorization': `token ${currentToken}`, 'Accept': 'application/vnd.github.v3+json' }
+    });
+    if (checkR.ok) {
+      const existing = await checkR.json();
+      existingSha = existing.sha;
+    }
+  } catch (_) {}
+
+  // Read file as base64
+  const base64 = await fileToBase64(file);
+
+  const body = {
+    message: `feat: upload audio ${filename}`,
+    content: base64,
+    ...(existingSha ? { sha: existingSha } : {})
+  };
+
+  const r = await fetch(`${API_BASE}/contents/${path}`, {
+    method: 'PUT',
+    headers: {
+      'Authorization': `token ${currentToken}`,
+      'Accept': 'application/vnd.github.v3+json',
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(body)
+  });
+
+  if (!r.ok) {
+    const err = await r.json().catch(() => ({}));
+    throw new Error(err.message || `HTTP ${r.status}`);
+  }
+
+  return filename;
+}
+
+// Read file as raw base64 (no data-url prefix)
+function fileToBase64(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const b64 = reader.result.split(',')[1]; // remove "data:audio/...;base64,"
+      resolve(b64);
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+// Sanitize filename: transliterate + safe chars only
+function sanitizeFilename(name) {
+  const ru = { а:'a',б:'b',в:'v',г:'g',д:'d',е:'e',ё:'yo',ж:'zh',з:'z',и:'i',й:'j',
+    к:'k',л:'l',м:'m',н:'n',о:'o',п:'p',р:'r',с:'s',т:'t',у:'u',ф:'f',х:'h',
+    ц:'ts',ч:'ch',ш:'sh',щ:'sch',ъ:'',ы:'y',ь:'',э:'e',ю:'yu',я:'ya' };
+  const base = name.toLowerCase()
+    .replace(/\.[^.]+$/, '')           // remove extension
+    .split('').map(c => ru[c] !== undefined ? ru[c] : c).join('')
+    .replace(/[^a-z0-9._-]+/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '')
+    .slice(0, 80);
+  const ext = (name.match(/\.[^.]+$/) || [''])[0].toLowerCase();
+  return base + ext;
+}
+
+// ── Render local tracks list in admin ─────────────────────────────
+function renderLocalTracksList() {
+  const list = document.getElementById('audio-track-list');
+  if (!list) return;
+
+  const tracks = audioConfig.localTracks || [];
+  if (tracks.length === 0) {
+    list.innerHTML = '<div style="font-family:var(--font-mono);font-size:0.62rem;color:var(--text-muted);text-align:center;padding:1rem;letter-spacing:1px;">ПЛЕЙЛИСТ ПУСТ — ЗАГРУЗИ ФАЙЛЫ</div>';
+    return;
+  }
+
+  list.innerHTML = tracks.map((tr, i) => `
+    <div class="audio-track-item" draggable="true" data-index="${i}">
+      <span class="audio-track-drag" title="Перетащить для сортировки">⠿</span>
+      <div class="audio-track-info-text">
+        <div class="audio-track-name">${escapeAdminHtml(tr.title || tr.filename)}</div>
+        <div class="audio-track-artist-edit">
+          <input type="text" class="audio-artist-input"
+                 value="${escapeAdminHtml(tr.artist || '')}"
+                 placeholder="Исполнитель"
+                 data-index="${i}"
+                 style="background:transparent;border:none;border-bottom:1px solid rgba(0,255,255,0.1);
+                        color:var(--text-secondary);font-family:var(--font-mono);font-size:0.58rem;
+                        width:120px;outline:none;letter-spacing:0.5px;">
+        </div>
+      </div>
+      <div class="audio-track-size">${tr.filename}</div>
+      <span class="audio-track-status done">✓ В РЕПО</span>
+      <button class="audio-track-del" data-index="${i}" title="Удалить из плейлиста">✕</button>
+    </div>
+  `).join('');
+
+  // Delete buttons
+  list.querySelectorAll('.audio-track-del').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const idx = parseInt(btn.dataset.index);
+      audioConfig.localTracks.splice(idx, 1);
+      renderLocalTracksList();
+    });
+  });
+
+  // Artist inputs
+  list.querySelectorAll('.audio-artist-input').forEach(inp => {
+    inp.addEventListener('change', () => {
+      const idx = parseInt(inp.dataset.index);
+      audioConfig.localTracks[idx].artist = inp.value.trim();
+    });
+  });
+
+  // Drag-to-reorder
+  setupDragSort(list, '.audio-track-item');
+}
+
+// ── Drag-to-reorder tracks ────────────────────────────────────────
+function setupDragSort(container, selector) {
+  let dragging = null;
+
+  container.querySelectorAll(selector).forEach(item => {
+    item.addEventListener('dragstart', () => {
+      dragging = item;
+      setTimeout(() => item.classList.add('dragging'), 0);
+    });
+    item.addEventListener('dragend', () => {
+      item.classList.remove('dragging');
+      dragging = null;
+      // Update config order
+      const newOrder = [];
+      container.querySelectorAll(selector).forEach(el => {
+        const idx = parseInt(el.dataset.index);
+        if (!isNaN(idx) && audioConfig.localTracks[idx]) {
+          newOrder.push(audioConfig.localTracks[idx]);
+        }
+      });
+      audioConfig.localTracks = newOrder;
+      renderLocalTracksList();
+    });
+    item.addEventListener('dragover', e => {
+      e.preventDefault();
+      if (!dragging || dragging === item) return;
+      const rect = item.getBoundingClientRect();
+      const mid = rect.top + rect.height / 2;
+      if (e.clientY < mid) {
+        container.insertBefore(dragging, item);
+      } else {
+        container.insertBefore(dragging, item.nextSibling);
+      }
+    });
+  });
+}
+
+function escapeAdminHtml(str) {
+  return String(str || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+// ── Setup upload zone ─────────────────────────────────────────────
+function setupAudioUpload() {
+  const zone = document.getElementById('audio-upload-zone');
+  const input = document.getElementById('audio-file-input');
+  if (!zone || !input) return;
+
+  zone.addEventListener('click', () => input.click());
+  zone.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') input.click(); });
+
+  zone.addEventListener('dragover', e => {
+    e.preventDefault();
+    zone.classList.add('drag-over');
+  });
+  zone.addEventListener('dragleave', () => zone.classList.remove('drag-over'));
+  zone.addEventListener('drop', e => {
+    e.preventDefault();
+    zone.classList.remove('drag-over');
+    handleAudioFiles(e.dataTransfer.files);
+  });
+
+  input.addEventListener('change', () => {
+    handleAudioFiles(input.files);
+    input.value = '';
+  });
+}
+
+async function handleAudioFiles(files) {
+  if (!files || files.length === 0) return;
+  const list = document.getElementById('audio-track-list');
+
+  for (const file of Array.from(files)) {
+    if (!file.type.startsWith('audio/')) continue;
+
+    // Add pending item to UI
+    const tempId = `upload-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    const item = document.createElement('div');
+    item.className = 'audio-track-item';
+    item.id = tempId;
+    item.innerHTML = `
+      <span class="audio-track-drag">⠿</span>
+      <div class="audio-track-info-text">
+        <div class="audio-track-name">${escapeAdminHtml(file.name)}</div>
+        <div class="audio-track-artist-edit" style="color:var(--text-muted);font-family:var(--font-mono);font-size:0.58rem;">
+          ${(file.size / 1024 / 1024).toFixed(2)} MB
+        </div>
+      </div>
+      <div class="audio-track-size">${file.name}</div>
+      <span class="audio-track-status uploading">ЗАГРУЗКА...</span>
+      <button class="audio-track-del" disabled>✕</button>
+    `;
+    // Insert before "list empty" message or append
+    const emptyMsg = list.querySelector('div[style]');
+    if (emptyMsg) emptyMsg.remove();
+    list.appendChild(item);
+
+    try {
+      const filename = await uploadAudioFile(file);
+      const statusEl = item.querySelector('.audio-track-status');
+      if (statusEl) {
+        statusEl.textContent = '✓ ЗАГРУЖЕН';
+        statusEl.className = 'audio-track-status done';
+      }
+
+      // Add to config
+      const trackTitle = file.name.replace(/\.[^.]+$/, '');
+      audioConfig.localTracks.push({
+        id: Date.now().toString(36),
+        title: trackTitle,
+        artist: '',
+        filename
+      });
+
+      item.remove();
+      renderLocalTracksList();
+
+    } catch (err) {
+      const statusEl = item.querySelector('.audio-track-status');
+      if (statusEl) {
+        statusEl.textContent = `ОШИБКА: ${err.message}`;
+        statusEl.className = 'audio-track-status error';
+      }
+    }
+  }
+}
+
+// ── Setup save button ─────────────────────────────────────────────
+function setupAudioSave() {
+  const btn = document.getElementById('audio-save-playlist-btn');
+  if (!btn) return;
+  btn.addEventListener('click', async () => {
+    setAudioSaveStatus('СОХРАНЕНИЕ...', 'loading');
+    btn.disabled = true;
+    try {
+      await saveAudioConfig({ ...audioConfig });
+      setAudioSaveStatus('✓ ПЛЕЙЛИСТ СОХРАНЁН В РЕПОЗИТОРИЙ', 'success');
+    } catch (err) {
+      setAudioSaveStatus(`ОШИБКА: ${err.message}`, 'error');
+    } finally {
+      btn.disabled = false;
+    }
+  });
+}
+
+function setAudioSaveStatus(msg, type) {
+  const el = document.getElementById('audio-save-status');
+  if (!el) return;
+  el.textContent = msg;
+  el.className = `audio-save-status ${type}`;
+  el.style.display = 'block';
+  if (type === 'success') {
+    setTimeout(() => { el.style.display = 'none'; }, 6000);
+  }
+}
+
+// ── Yandex Music section ──────────────────────────────────────────
+function setupYandexSection() {
+  const connectBtn    = document.getElementById('yandex-connect-btn');
+  const disconnectBtn = document.getElementById('yandex-disconnect-btn');
+  const addPlBtn      = document.getElementById('yandex-add-playlist-btn');
+  const saveBtn       = document.getElementById('yandex-save-btn');
+
+  connectBtn?.addEventListener('click', () => {
+    const clientId = document.getElementById('yandex-client-id-input')?.value.trim();
+    if (!clientId) {
+      showYandexMsg('Введи Client ID приложения Яндекс OAuth', 'error');
+      return;
+    }
+    // Save client ID
+    audioConfig.yandexClientId = clientId;
+    // Redirect to Yandex OAuth
+    const redirectUri = encodeURIComponent(window.location.href.split('#')[0]);
+    const oauthUrl = `https://oauth.yandex.ru/authorize?response_type=token&client_id=${encodeURIComponent(clientId)}&redirect_uri=${redirectUri}&scope=music%3Aread`;
+    window.location.href = oauthUrl;
+  });
+
+  disconnectBtn?.addEventListener('click', () => {
+    localStorage.removeItem(YANDEX_TK_ADMIN);
+    localStorage.removeItem(YANDEX_UID_ADMIN);
+    audioConfig.yandexClientId = '';
+    updateYandexConnectionUI();
+    showYandexMsg('Аккаунт Яндекс Музыки отключён', 'success');
+  });
+
+  addPlBtn?.addEventListener('click', addYandexPlaylistManual);
+
+  saveBtn?.addEventListener('click', async () => {
+    setYandexSaveStatus('СОХРАНЕНИЕ...', 'loading');
+    saveBtn.disabled = true;
+    try {
+      const clientId = document.getElementById('yandex-client-id-input')?.value.trim() || audioConfig.yandexClientId;
+      audioConfig.yandexClientId = clientId;
+      await saveAudioConfig({ ...audioConfig });
+      setYandexSaveStatus('✓ НАСТРОЙКИ ЯНДЕКС СОХРАНЕНЫ', 'success');
+    } catch (err) {
+      setYandexSaveStatus(`ОШИБКА: ${err.message}`, 'error');
+    } finally {
+      saveBtn.disabled = false;
+    }
+  });
+}
+
+// ── Check OAuth return (token in URL hash from Yandex redirect) ───
+function checkYandexOAuthReturn() {
+  const hash = window.location.hash;
+  if (!hash.includes('access_token=')) return;
+
+  const params = new URLSearchParams(hash.replace('#', '?'));
+  const token = params.get('access_token');
+  if (!token) return;
+
+  localStorage.setItem(YANDEX_TK_ADMIN, token);
+  history.replaceState(null, '', window.location.pathname + window.location.search);
+
+  showYandexMsg('✓ Аккаунт Яндекс подключён! Загружаем плейлисты...', 'success');
+  updateYandexConnectionUI();
+  fetchAndShowYandexPlaylists(token);
+}
+
+function updateYandexConnectionUI() {
+  const token         = localStorage.getItem(YANDEX_TK_ADMIN);
+  const statusEl      = document.getElementById('yandex-status');
+  const connectBtn    = document.getElementById('yandex-connect-btn');
+  const disconnectBtn = document.getElementById('yandex-disconnect-btn');
+  const section       = document.getElementById('yandex-playlists-section');
+  const clientInput   = document.getElementById('yandex-client-id-input');
+
+  if (token) {
+    if (statusEl) {
+      statusEl.textContent = 'ПОДКЛЮЧЁН';
+      statusEl.className = 'yandex-connect-status connected';
+    }
+    if (connectBtn)    connectBtn.hidden    = true;
+    if (disconnectBtn) disconnectBtn.hidden = false;
+    if (section)       section.hidden       = false;
+    fetchAndShowYandexPlaylists(token);
+  } else {
+    if (statusEl) {
+      statusEl.textContent = 'НЕ ПОДКЛЮЧЁН';
+      statusEl.className = 'yandex-connect-status disconnected';
+    }
+    if (connectBtn)    connectBtn.hidden    = false;
+    if (disconnectBtn) disconnectBtn.hidden = true;
+    if (section)       section.hidden       = true;
+  }
+
+  // Fill client ID if saved in config
+  if (clientInput && audioConfig.yandexClientId) {
+    clientInput.value = audioConfig.yandexClientId;
+  }
+
+  renderSelectedYandexPlaylists();
+}
+
+async function fetchAndShowYandexPlaylists(token) {
+  const loadingEl = document.getElementById('yandex-playlists-loading');
+  const grid      = document.getElementById('yandex-playlists-grid');
+  const corsWarn  = document.getElementById('yandex-cors-warning');
+  const manualSec = document.getElementById('yandex-manual-playlist-section');
+
+  if (loadingEl) loadingEl.hidden = false;
+  if (grid)      grid.innerHTML = '';
+
+  try {
+    // Step 1: get account info for UID
+    const statusR = await fetch('https://api.music.yandex.net/account/status', {
+      headers: {
+        'Authorization': `OAuth ${token}`,
+        'X-Yandex-Music-Client': 'WindowsPhone/3.17'
+      }
+    });
+
+    if (!statusR.ok) throw new Error(`status ${statusR.status}`);
+    const statusData = await statusR.json();
+    const uid = statusData?.result?.account?.uid;
+    if (!uid) throw new Error('uid не получен');
+
+    localStorage.setItem(YANDEX_UID_ADMIN, uid);
+
+    // Step 2: get playlists
+    const plR = await fetch(`https://api.music.yandex.net/users/${uid}/playlists/list`, {
+      headers: {
+        'Authorization': `OAuth ${token}`,
+        'X-Yandex-Music-Client': 'WindowsPhone/3.17'
+      }
+    });
+
+    if (!plR.ok) throw new Error(`playlists status ${plR.status}`);
+    const plData = await plR.json();
+    const playlists = plData?.result || [];
+
+    if (loadingEl) loadingEl.hidden = true;
+    if (corsWarn)  corsWarn.hidden  = true;
+    if (manualSec) manualSec.hidden = false;
+
+    if (playlists.length === 0) {
+      if (grid) grid.innerHTML = '<div style="font-family:var(--font-mono);font-size:0.62rem;color:var(--text-muted);letter-spacing:1px;">ПЛЕЙЛИСТЫ НЕ НАЙДЕНЫ</div>';
+      return;
+    }
+
+    renderYandexPlaylistsGrid(playlists, uid, grid);
+
+  } catch (err) {
+    // CORS or other error
+    if (loadingEl) loadingEl.hidden = true;
+    if (corsWarn)  corsWarn.hidden  = false;
+    if (manualSec) manualSec.hidden = false;
+
+    if (grid) grid.innerHTML = '';
+    console.warn('[Audio Admin] Yandex API error:', err.message);
+  }
+}
+
+function renderYandexPlaylistsGrid(playlists, uid, container) {
+  if (!container) return;
+
+  const selectedKinds = new Set((audioConfig.yandexPlaylists || []).map(p => String(p.kind)));
+
+  container.innerHTML = playlists.map(pl => {
+    const checked = selectedKinds.has(String(pl.kind)) ? 'checked' : '';
+    const count   = pl.trackCount ?? pl.track_count ?? '';
+    return `
+      <label class="yandex-playlist-select-item">
+        <input type="checkbox" value="${pl.kind}" data-uid="${uid}"
+               data-title="${escapeAdminHtml(pl.title || `Плейлист ${pl.kind}`)}"
+               data-count="${count}" ${checked}>
+        <span class="yandex-playlist-select-label">${escapeAdminHtml(pl.title || `Плейлист ${pl.kind}`)}</span>
+        ${count ? `<span class="yandex-playlist-select-count">${count} тр.</span>` : ''}
+      </label>
+    `;
+  }).join('');
+
+  // Bind checkbox changes → update audioConfig.yandexPlaylists
+  container.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+    cb.addEventListener('change', syncYandexPlaylistSelection);
+  });
+}
+
+function syncYandexPlaylistSelection() {
+  const grid = document.getElementById('yandex-playlists-grid');
+  if (!grid) return;
+
+  const checked = [];
+  grid.querySelectorAll('input[type="checkbox"]:checked').forEach(cb => {
+    checked.push({
+      kind:       parseInt(cb.value),
+      uid:        cb.dataset.uid,
+      title:      cb.dataset.title,
+      trackCount: cb.dataset.count ? parseInt(cb.dataset.count) : undefined
+    });
+  });
+
+  // Also keep manually added playlists that are not from the API
+  const manualOnly = (audioConfig.yandexPlaylists || []).filter(p => p.manual);
+  audioConfig.yandexPlaylists = [...checked, ...manualOnly];
+  renderSelectedYandexPlaylists();
+}
+
+function addYandexPlaylistManual() {
+  const urlInput   = document.getElementById('yandex-playlist-url');
+  const titleInput = document.getElementById('yandex-playlist-title');
+  const rawUrl     = urlInput?.value.trim();
+  const title      = titleInput?.value.trim() || 'Плейлист';
+
+  if (!rawUrl) return;
+
+  // Parse music.yandex.ru/users/LOGIN/playlists/KIND
+  const match = rawUrl.match(/users\/([^/]+)\/playlists\/(\d+)/);
+  if (!match) {
+    showYandexMsg('Неверный формат URL. Пример: music.yandex.ru/users/LOGIN/playlists/1234', 'error');
+    return;
+  }
+
+  const uid  = match[1];
+  const kind = parseInt(match[2]);
+
+  // Avoid duplicates
+  const exists = (audioConfig.yandexPlaylists || []).some(p => String(p.kind) === String(kind) && p.uid === uid);
+  if (exists) {
+    showYandexMsg('Этот плейлист уже добавлен', 'error');
+    return;
+  }
+
+  if (!audioConfig.yandexPlaylists) audioConfig.yandexPlaylists = [];
+  audioConfig.yandexPlaylists.push({ kind, uid, title, manual: true });
+  renderSelectedYandexPlaylists();
+
+  if (urlInput)   urlInput.value   = '';
+  if (titleInput) titleInput.value = '';
+  showYandexMsg(`✓ Плейлист «${title}» добавлен`, 'success');
+}
+
+function renderSelectedYandexPlaylists() {
+  const list = document.getElementById('yandex-selected-list');
+  if (!list) return;
+
+  const playlists = audioConfig.yandexPlaylists || [];
+  if (playlists.length === 0) {
+    list.innerHTML = '<div style="font-family:var(--font-mono);font-size:0.62rem;color:var(--text-muted);letter-spacing:1px;padding:0.3rem 0;">НЕТ ВЫБРАННЫХ ПЛЕЙЛИСТОВ</div>';
+    return;
+  }
+
+  list.innerHTML = playlists.map((pl, i) => `
+    <div style="display:flex;align-items:center;gap:0.6rem;padding:0.5rem 0.65rem;
+                border:1px solid rgba(255,204,0,0.12);border-radius:6px;
+                background:rgba(255,204,0,0.03);">
+      <span style="color:#ffcc00;font-size:0.85rem;">♪</span>
+      <span style="font-family:var(--font-body);font-size:0.75rem;color:var(--text-secondary);flex:1;">
+        ${escapeAdminHtml(pl.title)}
+      </span>
+      <span style="font-family:var(--font-mono);font-size:0.55rem;color:var(--text-muted);">
+        uid:${pl.uid} / kind:${pl.kind}
+      </span>
+      <button class="audio-track-del" data-pl-idx="${i}" title="Удалить">✕</button>
+    </div>
+  `).join('');
+
+  list.querySelectorAll('.audio-track-del').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const idx = parseInt(btn.dataset.plIdx);
+      audioConfig.yandexPlaylists.splice(idx, 1);
+      renderSelectedYandexPlaylists();
+    });
+  });
+}
+
+function showYandexMsg(msg, type) {
+  const el = document.getElementById('yandex-connect-msg');
+  if (!el) return;
+  el.textContent = msg;
+  el.style.display = 'block';
+  if (type === 'error') {
+    el.style.color = 'var(--neon-magenta)';
+    el.style.background = 'rgba(255,0,255,0.06)';
+    el.style.border = '1px solid rgba(255,0,255,0.2)';
+  } else {
+    el.style.color = 'var(--neon-green)';
+    el.style.background = 'rgba(0,255,136,0.06)';
+    el.style.border = '1px solid rgba(0,255,136,0.2)';
+  }
+  if (type !== 'error') {
+    setTimeout(() => { el.style.display = 'none'; }, 5000);
+  }
+}
+
+function setYandexSaveStatus(msg, type) {
+  const el = document.getElementById('yandex-save-status');
+  if (!el) return;
+  el.textContent = msg;
+  el.className = `audio-save-status ${type}`;
+  el.style.display = 'block';
+  if (type === 'success') {
+    setTimeout(() => { el.style.display = 'none'; }, 5000);
+  }
+}
+

@@ -32,18 +32,22 @@ moex-oi-analyst/
 ├── admin.html            — Панель автора (GitHub PAT auth)
 ├── css/
 │   ├── style.css         — Deep Space Neon тема, glassmorphism, все виджеты
-│   └── animations.css    — Keyframes, reveal, ticker, scan-line
+│   ├── animations.css    — Keyframes, reveal, ticker, scan-line
+│   └── audio-player.css  — Neon cyberpunk аудиоплеер (стили)
 ├── js/
 │   ├── three-scene.js    — Three.js: neon-grid, частицы, кольца, OI-bars, parallax
 │   │                       Мобильная оптимизация: 200 частиц, 30fps, low-power, gyro
 │   ├── blog.js           — Fetch posts, render cards/list, пагинация, SEO meta, initMobileNav
-│   ├── admin.js          — GitHub API: публикация, удаление, sitemap update, автотеги, мобильное меню
+│   ├── admin.js          — GitHub API: публикация, удаление, sitemap update, автотеги, audio admin
+│   ├── audio-player.js   — Аудиоплеер: HTML5 Audio, FFT visualizer, Яндекс embed
 │   ├── moex-rates.js     — Курсы валют с MOEX ISS CETS board (USD/EUR/CNY/GOLD)
 │   ├── trading-hours.js  — Торговые сессии, клиринги, живые часы МСК
 │   └── moex-news.js      — Топ-5 новостей с MOEX ISS sitenews.json
 ├── posts/
 │   ├── index.json        — [{id, title, date, tags, excerpt, file}]
 │   └── YYYY-MM-DD-slug.json — Полный пост {id, title, date, tags, excerpt, content, file}
+├── audio/                — Аудиофайлы (MP3/WAV/OGG), загружаются через admin
+├── audio-config.json     — Конфиг плеера: localTracks[], yandexPlaylists[], activeSource
 ├── sitemap.xml           — Авто-обновляется при каждом посте через admin.js
 ├── robots.txt            — Allow: /, Disallow: /admin.html
 ├── _config.yml           — GitHub Pages Jekyll config
@@ -78,6 +82,55 @@ moex-oi-analyst/
 - `generateTagsFromText()` → словарь 35+ категорий, 120+ паттернов MOEX-терминов
 - `triggerAutoTags()` → кнопка ⚡ АВТОТЕГИ + debounced re-run при изменении текста
 - EasyMDE редактор с автосохранением черновика
+- **Audio Admin:** `initAudioTab()`, `uploadAudioFile()`, `saveAudioConfig()`, Яндекс OAuth
+
+### Аудиоплеер (audio-player.js + css/audio-player.css)
+
+**Размещение:** hero-секция `index.html`, после `.hero-cta` — инжектируется через JS.
+
+**Компоненты UI:**
+- Tabs: LOCAL / ЯНДЕКС ♫ (переключение источника)
+- Canvas-визуализатор: Web Audio API AnalyserNode → FFT 256 → 48 bars, gradient cyan→magenta
+- Track info: scrolling-title при длинном названии, artist
+- Progress bar: seek by click/drag, neon fill gradient
+- Controls: ⏮ ▶/⏸ ⏭ + volume + shuffle + repeat (off/all/one)
+
+**LOCAL режим:**
+- Источник: файлы из репо `/audio/` (относительный URL)
+- Config: `audio-config.json` → `localTracks[]` → `{ id, title, artist, filename }`
+- Autoplay запрещён браузером — старт только по клику пользователя
+- AudioContext создаётся lazily на первый клик play
+
+**ЯНДЕКС режим:**
+- OAuth implicit flow через Яндекс ID (redirect → token в hash)
+- Если плейлисты настроены: iframe embed `music.yandex.ru/iframe/#playlist/{uid}/{kind}/`
+- Если нет: инструкция "настройте в admin"
+
+**audio-config.json:**
+```json
+{
+  "localTracks": [{ "id": "...", "title": "...", "artist": "...", "filename": "track.mp3" }],
+  "yandexPlaylists": [{ "kind": 1234, "uid": "login", "title": "..." }],
+  "yandexClientId": "...",
+  "activeSource": "local"
+}
+```
+OAuth-токен Яндекса хранится в `localStorage['moex_oi_yandex_token']` (не в репо).
+
+### Admin — таб АУДИОПЛЕЕР (admin.html + admin.js)
+
+**Секция 1 — ЛОКАЛЬНЫЙ ПЛЕЙЛИСТ:**
+- Drag&drop или клик для выбора файлов
+- Загрузка через GitHub Contents API → `/audio/{filename}` (base64, max 50 MB)
+- Список треков с drag-to-reorder и inline редактированием поля "Исполнитель"
+- Кнопка "СОХРАНИТЬ ПЛЕЙЛИСТ" → обновляет `audio-config.json` в репо
+
+**Секция 2 — ЯНДЕКС МУЗЫКА:**
+- Поле Client ID Яндекс OAuth приложения
+- "ПОДКЛЮЧИТЬ АККАУНТ" → `oauth.yandex.ru/authorize?response_type=token`
+- После возврата: список плейлистов аккаунта через `api.music.yandex.net`
+- Если CORS блокирует API — fallback на ручной ввод URL плейлиста
+- Чекбоксы выбора / удаление → "СОХРАНИТЬ НАСТРОЙКИ ЯНДЕКС"
 
 ### Курсы валют (moex-rates.js)
 - **Endpoint:** `https://iss.moex.com/iss/engines/currency/markets/selt/boards/CETS/securities.json`
@@ -120,6 +173,7 @@ moex-oi-analyst/
 | 2026-03-29 | 5079971 | feat: top-5 MOEX daily news from ISS API |
 | 2026-03-29 | 4d74e6a | fix: rewrite moex-rates.js для реальных колонок CETS board API |
 | 2026-03-29 | 8a7c0e7 | feat: полная мобильная оптимизация — гамбургер-меню, responsive CSS, Three.js mobile mode |
+| 2026-03-31 | —       | feat: аудиоплеер — neon cyberpunk, FFT visualizer, Яндекс OAuth, admin upload |
 
 ## Текущее состояние
 
@@ -131,9 +185,11 @@ moex-oi-analyst/
 - ✅ Топ-5 новостей MOEX с автообновлением
 - ✅ Автогенерация хештегов в admin-панели
 - ✅ **Мобильная оптимизация:** гамбургер-меню, responsive layout, Three.js mobile mode (30fps, 200 частиц, gyro)
+- ✅ **Аудиоплеер:** neon cyberpunk, canvas FFT visualizer, LOCAL (файлы из репо) + ЯНДЕКС (OAuth embed)
+- ✅ **Admin — АУДИОПЛЕЕР таб:** загрузка файлов, управление плейлистом, Яндекс OAuth, ручной ввод URL
 - ⚠️ **Giscus комментарии:** нужно настроить `data-repo-id` и `data-category-id` через https://giscus.app → обновить `js/blog.js` функция `loadGiscus()`
 - ⚠️ **OG-image:** файл `og-image.png` (1200×630px) не создан — нет превью при шеринге
-- ℹ️ Репо публичное (GitHub Pages бесплатно работает только с публичными репо)
+- **Audio player:** для Яндекс Музыки нужно зарегистрировать приложение на oauth.yandex.ru → Веб-сервис → Callback URI = URL admin.html
 
 ## Важные замечания
 

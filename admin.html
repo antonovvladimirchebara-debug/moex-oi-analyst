@@ -8,6 +8,7 @@
 
   <link rel="stylesheet" href="css/style.css">
   <link rel="stylesheet" href="css/animations.css">
+  <link rel="stylesheet" href="css/audio-player.css">
   <!-- Favicon -->
   <link rel="icon" type="image/x-icon" href="favicon.ico">
   <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
@@ -102,6 +103,7 @@
     <div class="admin-tabs" role="tablist">
       <button class="tab-btn active" role="tab" aria-selected="true" data-tab="new-post">НОВЫЙ ПОСТ</button>
       <button class="tab-btn" role="tab" aria-selected="false" data-tab="manage-posts">УПРАВЛЕНИЕ ПОСТАМИ</button>
+      <button class="tab-btn" role="tab" aria-selected="false" data-tab="audio-player">АУДИОПЛЕЕР</button>
     </div>
 
     <!-- NEW POST TAB -->
@@ -181,6 +183,140 @@
           </div>
         </div>
       </div>
+    </section>
+
+    <!-- AUDIO PLAYER TAB -->
+    <section id="tab-audio-player" class="admin-tab-content" role="tabpanel" aria-label="Настройки аудиоплеера" hidden>
+
+      <!-- LOCAL PLAYLIST -->
+      <div class="admin-card glass-card">
+        <h2 class="admin-section-title">ЛОКАЛЬНЫЙ ПЛЕЙЛИСТ</h2>
+        <p style="font-family:var(--font-mono);font-size:0.65rem;color:var(--text-muted);letter-spacing:1px;margin-bottom:1rem;">
+          Загрузи аудиофайлы с ПК — они сохранятся в репозиторий (папка /audio/).
+          Поддерживаются MP3, WAV, OGG, FLAC, M4A до 50 МБ.
+        </p>
+
+        <!-- Upload zone -->
+        <div class="audio-upload-zone" id="audio-upload-zone" role="button"
+             tabindex="0" aria-label="Загрузить аудиофайл">
+          <span class="audio-upload-icon">♪</span>
+          <span class="audio-upload-label">ПЕРЕТАЩИ ИЛИ НАЖМИ ДЛЯ ЗАГРУЗКИ</span>
+          <span class="audio-upload-sub">MP3 / WAV / OGG / FLAC / M4A · MAX 50 MB</span>
+          <input type="file" id="audio-file-input" accept="audio/*"
+                 multiple style="display:none" aria-label="Выбрать аудиофайлы">
+        </div>
+
+        <!-- Track list -->
+        <div class="audio-track-list" id="audio-track-list">
+          <!-- filled by JS -->
+        </div>
+
+        <div class="form-actions">
+          <button id="audio-save-playlist-btn" class="btn-primary">
+            <span class="btn-icon">▶</span>
+            СОХРАНИТЬ ПЛЕЙЛИСТ
+          </button>
+        </div>
+        <div id="audio-save-status"></div>
+      </div>
+
+      <!-- YANDEX MUSIC -->
+      <div class="admin-card glass-card">
+        <h2 class="admin-section-title">ЯНДЕКС МУЗЫКА</h2>
+        <p style="font-family:var(--font-mono);font-size:0.65rem;color:var(--text-muted);letter-spacing:1px;margin-bottom:1rem;">
+          Подключи свой аккаунт Яндекс Музыки через OAuth.
+          Для этого нужно зарегистрировать приложение на
+          <a href="https://oauth.yandex.ru" target="_blank" rel="noopener"
+             style="color:var(--neon-cyan)">oauth.yandex.ru</a>
+          и указать тип «Веб-сервис» с Callback URI = URL этой страницы.
+        </p>
+
+        <div class="yandex-connect-card">
+          <div class="yandex-connect-header">
+            <span class="yandex-logo-icon">♫</span>
+            <span class="yandex-connect-title">ЯНДЕКС МУЗЫКА</span>
+            <span class="yandex-connect-status disconnected" id="yandex-status">НЕ ПОДКЛЮЧЁН</span>
+          </div>
+
+          <!-- Client ID input -->
+          <div class="form-group" id="yandex-clientid-group">
+            <label for="yandex-client-id-input" class="form-label">
+              ЯНДЕКС OAUTH CLIENT ID
+            </label>
+            <input type="text" id="yandex-client-id-input" class="form-input neon-input"
+                   placeholder="xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+                   autocomplete="off" spellcheck="false">
+            <p style="font-family:var(--font-mono);font-size:0.58rem;color:var(--text-muted);margin-top:0.3rem;letter-spacing:0.5px;">
+              Из настроек приложения на oauth.yandex.ru → «ID приложения»
+            </p>
+          </div>
+
+          <!-- Connect / Disconnect buttons -->
+          <div style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap;margin-bottom:0.75rem;">
+            <button class="btn-yandex" id="yandex-connect-btn">
+              ♫ ПОДКЛЮЧИТЬ АККАУНТ
+            </button>
+            <button class="yandex-disconnect-btn" id="yandex-disconnect-btn" hidden>
+              отключить
+            </button>
+          </div>
+
+          <!-- Status/error message -->
+          <div id="yandex-connect-msg" style="display:none;font-family:var(--font-mono);font-size:0.65rem;padding:0.4rem 0.75rem;border-radius:4px;margin-bottom:0.75rem;"></div>
+
+          <!-- Playlists (after connect) -->
+          <div id="yandex-playlists-section" hidden>
+            <div class="form-label" style="margin-bottom:0.6rem;">ПЛЕЙЛИСТЫ АККАУНТА</div>
+            <div id="yandex-playlists-loading" class="ap-loading" hidden>
+              <div class="ap-loading-dot"></div>
+              <div class="ap-loading-dot"></div>
+              <div class="ap-loading-dot"></div>
+              <span>ЗАГРУЗКА ПЛЕЙЛИСТОВ...</span>
+            </div>
+            <div class="yandex-playlists-grid" id="yandex-playlists-grid">
+              <!-- filled by JS -->
+            </div>
+            <div id="yandex-cors-warning" hidden
+                 style="font-family:var(--font-mono);font-size:0.62rem;color:var(--neon-orange);
+                        background:rgba(255,153,0,0.07);border:1px solid rgba(255,153,0,0.2);
+                        border-radius:5px;padding:0.65rem 0.85rem;margin:0.5rem 0;">
+              ⚠ API Яндекс Музыки недоступен напрямую из браузера (CORS).
+              Введи ссылку на плейлист вручную (формат: music.yandex.ru/users/LOGIN/playlists/KIND).
+            </div>
+            <div id="yandex-manual-playlist-section" style="margin-top:0.75rem;">
+              <label for="yandex-playlist-url" class="form-label">ССЫЛКА НА ПЛЕЙЛИСТ (вручную)</label>
+              <div style="display:flex;gap:0.5rem;align-items:center;">
+                <input type="url" id="yandex-playlist-url" class="form-input neon-input"
+                       placeholder="https://music.yandex.ru/users/LOGIN/playlists/KIND"
+                       style="flex:1">
+                <input type="text" id="yandex-playlist-title" class="form-input neon-input"
+                       placeholder="Название" style="max-width:140px">
+                <button class="btn-secondary" id="yandex-add-playlist-btn"
+                        style="font-size:0.6rem;padding:0.5rem 0.85rem;white-space:nowrap;">
+                  + ДОБАВИТЬ
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Selected playlists list -->
+          <div id="yandex-selected-section" style="margin-top:1rem;">
+            <div class="form-label" style="margin-bottom:0.6rem;">ВЫБРАННЫЕ ПЛЕЙЛИСТЫ</div>
+            <div id="yandex-selected-list" class="yandex-playlists-grid">
+              <!-- filled by JS -->
+            </div>
+          </div>
+
+          <div class="form-actions" style="margin-top:1rem;">
+            <button id="yandex-save-btn" class="btn-primary">
+              <span class="btn-icon">▶</span>
+              СОХРАНИТЬ НАСТРОЙКИ ЯНДЕКС
+            </button>
+          </div>
+          <div id="yandex-save-status"></div>
+        </div>
+      </div>
+
     </section>
   </main>
 

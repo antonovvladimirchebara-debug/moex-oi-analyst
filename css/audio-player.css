@@ -1,0 +1,961 @@
+/* ============================================
+   AUDIO PLAYER — Deep Space Neon Theme
+   MOEX/OI Analyst — cyberpunk audio widget
+   ============================================ */
+
+/* ── Wrapper (hero section placement) ─────── */
+.ap-wrap {
+  width: 100%;
+  max-width: 680px;
+  margin: 2rem auto 0;
+  position: relative;
+  z-index: 10;
+}
+
+/* ── Player Card ───────────────────────────── */
+.ap-player {
+  background: rgba(5, 10, 25, 0.82);
+  border: 1px solid rgba(0, 255, 255, 0.18);
+  border-radius: 12px;
+  padding: 1.1rem 1.25rem 1rem;
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  box-shadow:
+    0 0 0 1px rgba(0, 255, 255, 0.06),
+    0 4px 40px rgba(0, 0, 0, 0.6),
+    0 0 60px rgba(0, 255, 255, 0.06),
+    inset 0 1px 0 rgba(0, 255, 255, 0.08);
+  position: relative;
+  overflow: hidden;
+  transition: box-shadow 0.3s ease;
+}
+
+.ap-player::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 1px;
+  background: linear-gradient(90deg,
+    transparent,
+    rgba(0, 255, 255, 0.4) 30%,
+    rgba(255, 0, 255, 0.4) 70%,
+    transparent);
+  pointer-events: none;
+}
+
+.ap-player:hover {
+  box-shadow:
+    0 0 0 1px rgba(0, 255, 255, 0.12),
+    0 4px 40px rgba(0, 0, 0, 0.6),
+    0 0 80px rgba(0, 255, 255, 0.1),
+    inset 0 1px 0 rgba(0, 255, 255, 0.12);
+}
+
+/* ── Player header label ───────────────────── */
+.ap-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.75rem;
+}
+
+.ap-label {
+  font-family: var(--font-display);
+  font-size: 0.55rem;
+  font-weight: 700;
+  letter-spacing: 3px;
+  color: var(--neon-cyan);
+  text-shadow: var(--glow-cyan);
+  text-transform: uppercase;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.ap-label-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--neon-cyan);
+  box-shadow: 0 0 6px var(--neon-cyan);
+  animation: ap-blink 1.5s ease-in-out infinite;
+}
+
+@keyframes ap-blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.2; }
+}
+
+/* ── Source Tabs ───────────────────────────── */
+.ap-source-tabs {
+  display: flex;
+  gap: 0.4rem;
+  margin-bottom: 0.85rem;
+}
+
+.ap-src-btn {
+  font-family: var(--font-display);
+  font-size: 0.58rem;
+  font-weight: 700;
+  letter-spacing: 2px;
+  padding: 0.3rem 0.85rem;
+  border-radius: 4px;
+  border: 1px solid rgba(0, 255, 255, 0.15);
+  color: var(--text-secondary);
+  background: transparent;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-transform: uppercase;
+}
+
+.ap-src-btn:hover {
+  border-color: rgba(0, 255, 255, 0.4);
+  color: var(--neon-cyan);
+  background: rgba(0, 255, 255, 0.05);
+}
+
+.ap-src-btn.active {
+  background: rgba(0, 255, 255, 0.1);
+  border-color: var(--neon-cyan);
+  color: var(--neon-cyan);
+  text-shadow: 0 0 8px rgba(0, 255, 255, 0.6);
+  box-shadow: 0 0 12px rgba(0, 255, 255, 0.15);
+}
+
+.ap-src-btn.yandex-active {
+  background: rgba(255, 204, 0, 0.1);
+  border-color: rgba(255, 204, 0, 0.6);
+  color: #ffcc00;
+  text-shadow: 0 0 8px rgba(255, 204, 0, 0.4);
+  box-shadow: 0 0 12px rgba(255, 204, 0, 0.12);
+}
+
+/* ── Visualizer Canvas ─────────────────────── */
+.ap-visualizer-wrap {
+  width: 100%;
+  height: 64px;
+  margin-bottom: 0.75rem;
+  border-radius: 6px;
+  overflow: hidden;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(0, 255, 255, 0.06);
+  position: relative;
+}
+
+.ap-visualizer {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+/* Idle state overlay */
+.ap-vis-idle {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ap-vis-idle-text {
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  color: rgba(0, 255, 255, 0.2);
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  animation: ap-vis-pulse 3s ease-in-out infinite;
+}
+
+@keyframes ap-vis-pulse {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 0.8; }
+}
+
+/* ── Track Info ────────────────────────────── */
+.ap-track-info {
+  display: flex;
+  align-items: baseline;
+  gap: 0.75rem;
+  margin-bottom: 0.65rem;
+  min-height: 1.6rem;
+  overflow: hidden;
+}
+
+.ap-track-title-wrap {
+  flex: 1;
+  overflow: hidden;
+}
+
+.ap-track-title {
+  font-family: var(--font-display);
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: 1px;
+  white-space: nowrap;
+  display: block;
+}
+
+.ap-track-title.scrolling {
+  animation: ap-marquee 12s linear infinite;
+}
+
+@keyframes ap-marquee {
+  0% { transform: translateX(0); }
+  10% { transform: translateX(0); }
+  90% { transform: translateX(calc(-100% + 200px)); }
+  100% { transform: translateX(calc(-100% + 200px)); }
+}
+
+.ap-track-artist {
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  flex-shrink: 0;
+  letter-spacing: 1px;
+}
+
+/* ── Progress Bar ──────────────────────────── */
+.ap-progress-row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-bottom: 0.75rem;
+}
+
+.ap-time {
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  min-width: 30px;
+}
+
+.ap-time-total {
+  text-align: right;
+}
+
+.ap-progress {
+  flex: 1;
+  height: 4px;
+  background: rgba(0, 255, 255, 0.08);
+  border-radius: 2px;
+  position: relative;
+  cursor: pointer;
+  overflow: visible;
+}
+
+.ap-progress:hover .ap-progress-handle {
+  opacity: 1;
+  transform: translateX(-50%) scale(1);
+}
+
+.ap-progress-fill {
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 0%;
+  border-radius: 2px;
+  background: linear-gradient(90deg, var(--neon-magenta), var(--neon-cyan));
+  box-shadow: 0 0 8px rgba(0, 255, 255, 0.5);
+  transition: width 0.1s linear;
+}
+
+.ap-progress-handle {
+  position: absolute;
+  top: 50%;
+  left: 0%;
+  transform: translateX(-50%) translateY(-50%) scale(0.5);
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--neon-cyan);
+  box-shadow: 0 0 8px var(--neon-cyan), 0 0 16px rgba(0, 255, 255, 0.4);
+  opacity: 0;
+  transition: opacity 0.2s, transform 0.2s;
+  pointer-events: none;
+}
+
+/* ── Controls ──────────────────────────────── */
+.ap-controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.ap-controls-center {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.ap-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 1px solid rgba(0, 255, 255, 0.15);
+  background: rgba(0, 255, 255, 0.04);
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+  line-height: 1;
+}
+
+.ap-btn:hover {
+  border-color: rgba(0, 255, 255, 0.4);
+  color: var(--neon-cyan);
+  background: rgba(0, 255, 255, 0.08);
+  box-shadow: 0 0 12px rgba(0, 255, 255, 0.2);
+  transform: scale(1.05);
+}
+
+.ap-btn:active {
+  transform: scale(0.95);
+}
+
+.ap-btn.ap-play-btn {
+  width: 44px;
+  height: 44px;
+  border: 1px solid rgba(0, 255, 255, 0.35);
+  background: rgba(0, 255, 255, 0.08);
+  color: var(--neon-cyan);
+  font-size: 1.05rem;
+  box-shadow: 0 0 16px rgba(0, 255, 255, 0.12);
+}
+
+.ap-btn.ap-play-btn:hover {
+  background: rgba(0, 255, 255, 0.15);
+  box-shadow: 0 0 24px rgba(0, 255, 255, 0.3);
+  transform: scale(1.08);
+}
+
+.ap-btn.ap-play-btn.playing {
+  border-color: rgba(255, 0, 255, 0.5);
+  color: var(--neon-magenta);
+  box-shadow: 0 0 20px rgba(255, 0, 255, 0.25);
+  background: rgba(255, 0, 255, 0.08);
+  animation: ap-playing-glow 1.5s ease-in-out infinite alternate;
+}
+
+@keyframes ap-playing-glow {
+  from { box-shadow: 0 0 16px rgba(255, 0, 255, 0.2); }
+  to   { box-shadow: 0 0 28px rgba(255, 0, 255, 0.45); }
+}
+
+/* ── Volume ────────────────────────────────── */
+.ap-volume-wrap {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.ap-btn.ap-mute-btn {
+  font-size: 0.75rem;
+  width: 30px;
+  height: 30px;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+
+.ap-volume {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 70px;
+  height: 3px;
+  border-radius: 2px;
+  background: rgba(0, 255, 255, 0.12);
+  outline: none;
+  cursor: pointer;
+}
+
+.ap-volume::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--neon-cyan);
+  box-shadow: 0 0 6px var(--neon-cyan);
+  cursor: pointer;
+}
+
+.ap-volume::-moz-range-thumb {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--neon-cyan);
+  box-shadow: 0 0 6px var(--neon-cyan);
+  border: none;
+  cursor: pointer;
+}
+
+/* ── Shuffle / Repeat controls ─────────────── */
+.ap-extra-btns {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.ap-btn.ap-extra {
+  width: 28px;
+  height: 28px;
+  font-size: 0.65rem;
+  border-radius: 4px;
+  letter-spacing: 0;
+  font-family: var(--font-mono);
+  color: var(--text-muted);
+  border-color: rgba(0, 255, 255, 0.08);
+}
+
+.ap-btn.ap-extra.active {
+  color: var(--neon-cyan);
+  border-color: rgba(0, 255, 255, 0.3);
+  background: rgba(0, 255, 255, 0.07);
+  box-shadow: 0 0 8px rgba(0, 255, 255, 0.1);
+}
+
+/* ── Track Count Badge ─────────────────────── */
+.ap-track-count {
+  font-family: var(--font-mono);
+  font-size: 0.55rem;
+  color: var(--text-muted);
+  letter-spacing: 1px;
+}
+
+/* ── No Tracks State ───────────────────────── */
+.ap-empty {
+  text-align: center;
+  padding: 0.75rem 0;
+}
+
+.ap-empty-text {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  color: rgba(0, 255, 255, 0.25);
+  letter-spacing: 3px;
+  text-transform: uppercase;
+}
+
+/* ── Yandex Mode ───────────────────────────── */
+.ap-yandex-mode {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.ap-yandex-embed-wrap {
+  width: 100%;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 204, 0, 0.15);
+  box-shadow: 0 0 20px rgba(255, 204, 0, 0.06);
+}
+
+.ap-yandex-iframe {
+  width: 100%;
+  height: 200px;
+  border: none;
+  display: block;
+  background: #1e1e1e;
+}
+
+.ap-yandex-no-playlist {
+  text-align: center;
+  padding: 1.5rem 1rem;
+  border: 1px dashed rgba(255, 204, 0, 0.2);
+  border-radius: 8px;
+  background: rgba(255, 204, 0, 0.03);
+}
+
+.ap-yandex-no-playlist p {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  color: rgba(255, 204, 0, 0.5);
+  letter-spacing: 2px;
+  margin-bottom: 0.5rem;
+}
+
+.ap-yandex-logo {
+  font-size: 1.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.ap-yandex-connect-hint {
+  font-family: var(--font-body);
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-top: 0.25rem;
+}
+
+.ap-yandex-playlist-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  margin-bottom: 0.5rem;
+  max-height: 180px;
+  overflow-y: auto;
+}
+
+.ap-yandex-pl-item {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.5rem 0.65rem;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 204, 0, 0.1);
+  background: rgba(255, 204, 0, 0.03);
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: var(--font-body);
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}
+
+.ap-yandex-pl-item:hover {
+  border-color: rgba(255, 204, 0, 0.3);
+  color: var(--text-primary);
+  background: rgba(255, 204, 0, 0.06);
+}
+
+.ap-yandex-pl-item.active-pl {
+  border-color: rgba(255, 204, 0, 0.5);
+  color: #ffcc00;
+  background: rgba(255, 204, 0, 0.08);
+}
+
+.ap-yandex-pl-icon {
+  font-size: 1rem;
+}
+
+.ap-yandex-pl-name {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ap-yandex-pl-count {
+  font-family: var(--font-mono);
+  font-size: 0.58rem;
+  color: var(--text-muted);
+}
+
+/* ── Loading spinner inside player ────────── */
+.ap-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.5rem;
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  color: rgba(0, 255, 255, 0.4);
+  letter-spacing: 2px;
+}
+
+.ap-loading-dot {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--neon-cyan);
+  animation: ap-dot-bounce 1.2s ease-in-out infinite;
+}
+
+.ap-loading-dot:nth-child(2) { animation-delay: 0.15s; }
+.ap-loading-dot:nth-child(3) { animation-delay: 0.3s; }
+
+@keyframes ap-dot-bounce {
+  0%, 100% { transform: translateY(0); opacity: 0.3; }
+  50% { transform: translateY(-4px); opacity: 1; }
+}
+
+/* ── Corner decoration ─────────────────────── */
+.ap-corner {
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  pointer-events: none;
+}
+.ap-corner-tl { top: 0; left: 0; border-top: 1px solid rgba(0,255,255,0.4); border-left: 1px solid rgba(0,255,255,0.4); }
+.ap-corner-tr { top: 0; right: 0; border-top: 1px solid rgba(0,255,255,0.4); border-right: 1px solid rgba(0,255,255,0.4); }
+.ap-corner-bl { bottom: 0; left: 0; border-bottom: 1px solid rgba(0,255,255,0.4); border-left: 1px solid rgba(0,255,255,0.4); }
+.ap-corner-br { bottom: 0; right: 0; border-bottom: 1px solid rgba(0,255,255,0.4); border-right: 1px solid rgba(0,255,255,0.4); }
+
+/* ── Admin: Audio tab styles ───────────────── */
+.audio-upload-zone {
+  border: 2px dashed rgba(0, 255, 255, 0.2);
+  border-radius: 10px;
+  padding: 2rem 1.5rem;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  background: rgba(0, 255, 255, 0.02);
+  margin-bottom: 1.5rem;
+}
+
+.audio-upload-zone:hover,
+.audio-upload-zone.drag-over {
+  border-color: rgba(0, 255, 255, 0.5);
+  background: rgba(0, 255, 255, 0.05);
+  box-shadow: 0 0 20px rgba(0, 255, 255, 0.1);
+}
+
+.audio-upload-icon {
+  font-size: 2.5rem;
+  margin-bottom: 0.75rem;
+  color: var(--neon-cyan);
+  text-shadow: var(--glow-cyan);
+  display: block;
+}
+
+.audio-upload-label {
+  font-family: var(--font-display);
+  font-size: 0.7rem;
+  letter-spacing: 2px;
+  color: var(--text-secondary);
+  display: block;
+  margin-bottom: 0.25rem;
+}
+
+.audio-upload-sub {
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  color: var(--text-muted);
+  letter-spacing: 1px;
+}
+
+.audio-track-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 1.25rem;
+  min-height: 40px;
+}
+
+.audio-track-item {
+  display: grid;
+  grid-template-columns: 24px 1fr auto auto 30px;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.65rem 0.85rem;
+  border-radius: 6px;
+  border: 1px solid rgba(0, 255, 255, 0.1);
+  background: rgba(0, 20, 40, 0.5);
+  transition: all 0.2s;
+}
+
+.audio-track-item:hover {
+  border-color: rgba(0, 255, 255, 0.22);
+  background: rgba(0, 20, 40, 0.7);
+}
+
+.audio-track-item.dragging {
+  opacity: 0.5;
+  border-color: var(--neon-cyan);
+  box-shadow: 0 0 12px rgba(0, 255, 255, 0.2);
+}
+
+.audio-track-drag {
+  cursor: grab;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  text-align: center;
+}
+
+.audio-track-drag:active { cursor: grabbing; }
+
+.audio-track-info-text {
+  overflow: hidden;
+}
+
+.audio-track-name {
+  font-family: var(--font-display);
+  font-size: 0.67rem;
+  color: var(--text-primary);
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.audio-track-artist-edit {
+  font-family: var(--font-mono);
+  font-size: 0.58rem;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.audio-track-size {
+  font-family: var(--font-mono);
+  font-size: 0.55rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.audio-track-status {
+  font-family: var(--font-mono);
+  font-size: 0.55rem;
+  letter-spacing: 1px;
+  padding: 0.15rem 0.4rem;
+  border-radius: 3px;
+}
+
+.audio-track-status.uploading {
+  color: var(--neon-orange);
+  background: rgba(255, 153, 0, 0.1);
+  border: 1px solid rgba(255, 153, 0, 0.3);
+}
+
+.audio-track-status.done {
+  color: var(--neon-green);
+  background: rgba(0, 255, 136, 0.06);
+  border: 1px solid rgba(0, 255, 136, 0.2);
+}
+
+.audio-track-status.error {
+  color: var(--neon-magenta);
+  background: rgba(255, 0, 255, 0.06);
+  border: 1px solid rgba(255, 0, 255, 0.2);
+}
+
+.audio-track-del {
+  width: 24px;
+  height: 24px;
+  border-radius: 4px;
+  border: 1px solid rgba(255, 0, 255, 0.15);
+  color: rgba(255, 0, 255, 0.4);
+  font-size: 0.7rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  background: transparent;
+}
+
+.audio-track-del:hover {
+  border-color: rgba(255, 0, 255, 0.5);
+  color: var(--neon-magenta);
+  background: rgba(255, 0, 255, 0.08);
+}
+
+/* ── Yandex OAuth section in admin ─────────── */
+.yandex-connect-card {
+  border: 1px solid rgba(255, 204, 0, 0.15);
+  border-radius: 10px;
+  padding: 1.25rem;
+  background: rgba(255, 204, 0, 0.02);
+}
+
+.yandex-connect-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.yandex-logo-icon {
+  font-size: 1.5rem;
+}
+
+.yandex-connect-title {
+  font-family: var(--font-display);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 2px;
+  color: #ffcc00;
+}
+
+.yandex-connect-status {
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  letter-spacing: 1px;
+  padding: 0.2rem 0.55rem;
+  border-radius: 3px;
+  margin-left: auto;
+}
+
+.yandex-connect-status.connected {
+  color: var(--neon-green);
+  background: rgba(0, 255, 136, 0.08);
+  border: 1px solid rgba(0, 255, 136, 0.2);
+}
+
+.yandex-connect-status.disconnected {
+  color: var(--text-muted);
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.yandex-playlists-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  margin: 0.75rem 0;
+}
+
+.yandex-playlist-select-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.6rem 0.75rem;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 204, 0, 0.1);
+  background: rgba(0, 0, 0, 0.2);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.yandex-playlist-select-item:hover {
+  border-color: rgba(255, 204, 0, 0.3);
+  background: rgba(255, 204, 0, 0.04);
+}
+
+.yandex-playlist-select-item input[type="checkbox"] {
+  accent-color: #ffcc00;
+  width: 14px;
+  height: 14px;
+  cursor: pointer;
+}
+
+.yandex-playlist-select-label {
+  font-family: var(--font-body);
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  flex: 1;
+}
+
+.yandex-playlist-select-count {
+  font-family: var(--font-mono);
+  font-size: 0.58rem;
+  color: var(--text-muted);
+}
+
+.btn-yandex {
+  background: linear-gradient(135deg, rgba(255, 204, 0, 0.15), rgba(255, 80, 0, 0.1));
+  border: 1px solid rgba(255, 204, 0, 0.4);
+  color: #ffcc00;
+  font-family: var(--font-display);
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 2px;
+  padding: 0.55rem 1.25rem;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  text-transform: uppercase;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.btn-yandex:hover {
+  background: linear-gradient(135deg, rgba(255, 204, 0, 0.25), rgba(255, 80, 0, 0.15));
+  box-shadow: 0 0 20px rgba(255, 204, 0, 0.2);
+  transform: translateY(-1px);
+}
+
+.btn-yandex:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.yandex-disconnect-btn {
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  color: rgba(255, 0, 255, 0.5);
+  background: none;
+  border: none;
+  cursor: pointer;
+  letter-spacing: 1px;
+  padding: 0;
+  text-decoration: underline;
+  transition: color 0.2s;
+}
+
+.yandex-disconnect-btn:hover {
+  color: var(--neon-magenta);
+}
+
+/* ── Admin audio section status ─────────────── */
+.audio-save-status {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  letter-spacing: 1px;
+  padding: 0.5rem 0.85rem;
+  border-radius: 5px;
+  margin-top: 0.75rem;
+}
+
+.audio-save-status.success {
+  color: var(--neon-green);
+  background: rgba(0, 255, 136, 0.07);
+  border: 1px solid rgba(0, 255, 136, 0.2);
+}
+
+.audio-save-status.error {
+  color: var(--neon-magenta);
+  background: rgba(255, 0, 255, 0.06);
+  border: 1px solid rgba(255, 0, 255, 0.2);
+}
+
+.audio-save-status.loading {
+  color: var(--neon-cyan);
+  background: rgba(0, 255, 255, 0.05);
+  border: 1px solid rgba(0, 255, 255, 0.15);
+}
+
+/* ── Section divider in admin audio tab ─────── */
+.audio-section-divider {
+  border: none;
+  border-top: 1px solid rgba(0, 255, 255, 0.08);
+  margin: 1.5rem 0;
+}
+
+/* ── Responsive ────────────────────────────── */
+@media (max-width: 640px) {
+  .ap-wrap {
+    margin: 1.25rem auto 0;
+  }
+
+  .ap-player {
+    padding: 0.85rem 1rem 0.85rem;
+  }
+
+  .ap-visualizer-wrap {
+    height: 48px;
+  }
+
+  .ap-volume {
+    width: 50px;
+  }
+
+  .ap-btn.ap-play-btn {
+    width: 40px;
+    height: 40px;
+  }
+
+  .ap-btn {
+    width: 32px;
+    height: 32px;
+    font-size: 0.8rem;
+  }
+
+  .ap-yandex-iframe {
+    height: 160px;
+  }
+}
+
+@media (max-width: 400px) {
+  .ap-volume-wrap { display: none; }
+  .ap-extra-btns { display: none; }
+}
