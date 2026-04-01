@@ -26,20 +26,22 @@
 
 ```
 moex-oi-analyst/
-├── index.html            — Главная: 3D hero + курсы + сессии + новости + последние 6 постов
+├── index.html            — Главная: hero (текст + справа 3D-плейс + видео 16:9) + курсы + сессии + новости + посты
 ├── blog.html             — Все посты (фильтры + пагинация 10/страница)
 ├── post.html             — Страница поста (markdown render + Giscus)
 ├── admin.html            — Панель автора (GitHub PAT auth)
 ├── css/
 │   ├── style.css         — Deep Space Neon тема, glassmorphism, все виджеты
 │   ├── animations.css    — Keyframes, reveal, ticker, scan-line
-│   └── audio-player.css  — Neon cyberpunk аудиоплеер (стили)
+│   ├── audio-player.css  — Neon cyberpunk аудиоплеер (стили)
+│   └── video-player.css  — Видеоблок hero: 3D рамка, 16:9, чипы плейлиста
 ├── js/
 │   ├── three-scene.js    — Three.js: neon-grid, частицы, кольца, OI-bars, parallax
 │   │                       Мобильная оптимизация: 200 частиц, 30fps, low-power, gyro
 │   ├── blog.js           — Fetch posts, render cards/list, пагинация, SEO meta, initMobileNav
-│   ├── admin.js          — GitHub API: публикация, удаление, sitemap update, автотеги, audio admin
+│   ├── admin.js          — GitHub API: посты, sitemap, автотеги, аудио- и видео-админка
 │   ├── audio-player.js   — Аудиоплеер: HTML5 Audio, FFT visualizer, Яндекс embed
+│   ├── video-player.js   — Видео на главной: video-config.json, local/embed/stream, плейлист
 │   ├── moex-rates.js     — Курсы валют с MOEX ISS CETS board (USD/EUR/CNY/GOLD)
 │   ├── trading-hours.js  — Торговые сессии, клиринги, живые часы МСК
 │   └── moex-news.js      — Топ-5 новостей с MOEX ISS sitenews.json
@@ -48,6 +50,8 @@ moex-oi-analyst/
 │   └── YYYY-MM-DD-slug.json — Полный пост {id, title, date, tags, excerpt, content, file}
 ├── audio/                — Аудиофайлы (MP3/WAV/OGG), загружаются через admin
 ├── audio-config.json     — Конфиг плеера: localTracks[], yandexPlaylists[], activeSource
+├── video/                — Видеофайлы (MP4/WebM/…), загрузка через admin → GitHub Contents API
+├── video-config.json     — Плейлист: [{ id, title, enabled, source, filename | embedUrl | streamUrl, provider? }]
 ├── sitemap.xml           — Авто-обновляется при каждом посте через admin.js
 ├── user-pages-github-io-root/ — шаблон index.html + robots.txt для репо username.github.io (Яндекс, корень хоста, Sitemap блога)
 ├── robots.txt            — Allow: /, Disallow: /admin.html
@@ -84,6 +88,22 @@ moex-oi-analyst/
 - `triggerAutoTags()` → кнопка ⚡ АВТОТЕГИ + debounced re-run при изменении текста
 - EasyMDE редактор с автосохранением черновика
 - **Audio Admin:** `initAudioTab()`, `uploadAudioFile()`, `saveAudioConfig()`, Яндекс OAuth
+- **Video Admin:** `initVideoTab()`, `uploadVideoFile()`, `saveVideoConfig()`, `parseVideoUrl()` — YouTube/Vimeo/Rutube/VK/прямой MP4
+
+### Видеоплеер (video-player.js + css/video-player.css)
+
+**Размещение:** правая колонка hero — `#hero-video-mount` внутри `.hero-right-column` под `#title-3d-container` (`index.html`, стили `style.css`).
+
+**UI:** метка VIDEO 3D, перспектива CSS (`perspective` + `rotateY` / `rotateX`), неоновая рамка и углы; область **16:9**; внутри — `<iframe>` (embed) или `<video controls>` (файл из `/video/` или прямой URL). Кнопки ⏮ ⏭, чипы плейлиста.
+
+**Источники `source`:**
+- `local` — `video/{filename}` в репозитории
+- `embed` — `embedUrl` (YouTube, Vimeo, Rutube, VK video_ext, Dailymotion, произвольный embed)
+- `stream` — `streamUrl` для прямого MP4/WebM
+
+**Фильтр:** в ротации только элементы с `enabled !== false`.
+
+**Публичный API:** `window.videoPlayer.reload()` — перечитать конфиг (после сохранения в админке на той же вкладке вызывается автоматически).
 
 ### Аудиоплеер (audio-player.js + css/audio-player.css)
 
@@ -117,6 +137,13 @@ moex-oi-analyst/
 }
 ```
 OAuth-токен Яндекса хранится в `localStorage['moex_oi_yandex_token']` (не в репо).
+
+### Admin — таб ВИДЕОПЛЕЕР (admin.html + admin.js)
+
+- Зона загрузки видео с ПК → коммит в `video/`, запись в плейлист (`source: local`)
+- Поле URL + заголовок → `parseVideoUrl()` → embed или stream
+- Список: чекбокс **ЭФИР**, редактирование заголовка, drag-сортировка, удаление
+- **Сохранить** — коммит `video-config.json`
 
 ### Admin — таб АУДИОПЛЕЕР (admin.html + admin.js)
 
@@ -180,6 +207,7 @@ OAuth-токен Яндекса хранится в `localStorage['moex_oi_yande
 | 2026-04-01 | 61db118 | docs: шаблон `user-pages-github-io-root/` для подтверждения Яндекса на корне github.io |
 | 2026-04-01 | f4d81d6 | docs: ссылка на созданный репозиторий `antonovvladimirchebara-debug.github.io` |
 | 2026-04-01 | a7152e1 | chore: `user-pages-github-io-root/robots.txt` — Sitemap на `/moex-oi-analyst/sitemap.xml` |
+| 2026-04-01 | —       | feat: видеоплеер на главной (3D рамка 16:9), `video-config.json`, admin ВИДЕОПЛЕЕР |
 
 ## Текущее состояние
 
@@ -193,6 +221,7 @@ OAuth-токен Яндекса хранится в `localStorage['moex_oi_yande
 - ✅ **Мобильная оптимизация:** гамбургер-меню, responsive layout, Three.js mobile mode (30fps, 200 частиц, gyro)
 - ✅ **Аудиоплеер:** neon cyberpunk, canvas FFT visualizer, LOCAL (файлы из репо) + ЯНДЕКС (OAuth embed)
 - ✅ **Admin — АУДИОПЛЕЕР таб:** загрузка файлов, управление плейлистом, Яндекс OAuth, ручной ввод URL
+- ✅ **Видеоплеер:** hero справа, плейлист local + embed (YouTube/Vimeo/Rutube/VK и др.) + прямые URL; вкладка **ВИДЕОПЛЕЕР** в admin
 - ✅ **SEO pre-render:** `scripts/build-posts.js` генерирует `posts/<slug>/index.html` со всеми мета, JSON-LD; GitHub Actions автозапуск при каждом пуше в `posts/**`
 - ✅ **sitemap.xml:** обновлён на статические URL `posts/<slug>/`
 - ✅ **index.html:** секция #methodology (~900 слов), расширенный блок автора с методологией и контактами

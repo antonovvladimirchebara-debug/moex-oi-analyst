@@ -231,12 +231,29 @@ body.page-post > .mobile-menu {
 }
 
 .hero-text { grid-column: 1; }
-#title-3d-container {
+
+.hero-right-column {
   grid-column: 2;
   grid-row: 1 / 3;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 1.25rem;
+  width: 100%;
+  max-width: 380px;
+}
+
+#title-3d-container {
   width: 300px;
   height: 300px;
   position: relative;
+  flex-shrink: 0;
+}
+
+#hero-video-mount {
+  width: 100%;
+  max-width: 360px;
 }
 
 .hero-badge {
@@ -2508,7 +2525,13 @@ html.lb-open { overflow: hidden !important; }
     grid-template-columns: 1fr;
     grid-template-rows: auto;
   }
+  .hero-right-column {
+    grid-column: 1;
+    grid-row: auto;
+    max-width: 100%;
+  }
   #title-3d-container { display: none; }
+  #hero-video-mount { max-width: 520px; margin: 0 auto; }
   .hero-stats { grid-column: 1; }
   .about-grid { grid-template-columns: 1fr; text-align: center; gap: 2rem; padding: 2rem; }
   .about-visual { flex-direction: row; justify-content: center; }

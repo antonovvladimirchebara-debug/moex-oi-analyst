@@ -756,6 +756,8 @@ function setupTabs() {
         await loadManagePosts();
       } else if (btn.dataset.tab === 'audio-player') {
         initAudioTab();
+      } else if (btn.dataset.tab === 'video-player') {
+        initVideoTab();
       }
     });
   });
@@ -807,6 +809,7 @@ document.addEventListener('DOMContentLoaded', () => {
       setupAutoTags();
       document.getElementById('publish-btn')?.addEventListener('click', publishPost);
       initAudioTab();
+      initVideoTab();
     } catch (err) {
       if (authError) {
         authError.textContent = err.message;
@@ -847,6 +850,7 @@ document.addEventListener('DOMContentLoaded', () => {
       setupAutoTags();
       document.getElementById('publish-btn')?.addEventListener('click', publishPost);
       initAudioTab();
+      initVideoTab();
     }).catch(() => {
       localStorage.removeItem(TOKEN_KEY);
     });
@@ -1539,6 +1543,446 @@ function setYandexSaveStatus(msg, type) {
   el.style.display = 'block';
   if (type === 'success') {
     setTimeout(() => { el.style.display = 'none'; }, 5000);
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════
+//  VIDEO PLAYER ADMIN
+// ══════════════════════════════════════════════════════════════════
+
+const VIDEO_CONFIG_PATH = 'video-config.json';
+const VIDEO_DIR = 'video/';
+
+let videoConfig = { playlist: [] };
+let videoConfigSha = null;
+let _videoTabSetupDone = false;
+
+/**
+ * Разбор URL видеохостинга или прямой поток
+ * @returns {null | { source, provider?, embedUrl?, streamUrl?, titleHint }}
+ */
+function parseVideoUrl(raw) {
+  const u = raw.trim();
+  if (!u) return null;
+  let url;
+  try {
+    url = new URL(u.startsWith('http') ? u : `https://${u}`);
+  } catch {
+    return null;
+  }
+
+  const pathQ = url.pathname + url.search;
+  if (/\.(mp4|webm|ogg)(\?.*)?$/i.test(pathQ)) {
+    return { source: 'stream', provider: 'direct', streamUrl: url.href, titleHint: 'Поток' };
+  }
+
+  const host = url.hostname.replace(/^www\./, '');
+
+  if (host === 'youtu.be') {
+    const id = url.pathname.split('/').filter(Boolean)[0];
+    if (id) {
+      return {
+        source: 'embed',
+        provider: 'youtube',
+        embedUrl: `https://www.youtube.com/embed/${id}`,
+        titleHint: 'YouTube',
+      };
+    }
+  }
+
+  if (host.includes('youtube.com') || host.includes('youtube-nocookie.com')) {
+    let id = url.searchParams.get('v');
+    if (!id && url.pathname.includes('/embed/')) {
+      id = url.pathname.split('/embed/')[1]?.split('/')[0];
+    }
+    if (!id && url.pathname.includes('/shorts/')) {
+      id = url.pathname.split('/shorts/')[1]?.split('/')[0];
+    }
+    if (id) {
+      return {
+        source: 'embed',
+        provider: 'youtube',
+        embedUrl: `https://www.youtube.com/embed/${encodeURIComponent(id)}`,
+        titleHint: 'YouTube',
+      };
+    }
+  }
+
+  if (host.includes('vimeo.com')) {
+    const m = url.pathname.match(/\/(?:video\/)?(\d+)/);
+    if (m) {
+      return {
+        source: 'embed',
+        provider: 'vimeo',
+        embedUrl: `https://player.vimeo.com/video/${m[1]}`,
+        titleHint: 'Vimeo',
+      };
+    }
+  }
+
+  if (host.includes('rutube.ru')) {
+    let m = url.pathname.match(/\/video\/([a-zA-Z0-9]+)/);
+    if (!m) m = url.pathname.match(/\/play\/embed\/([a-zA-Z0-9]+)/);
+    if (m) {
+      return {
+        source: 'embed',
+        provider: 'rutube',
+        embedUrl: `https://rutube.ru/play/embed/${m[1]}`,
+        titleHint: 'Rutube',
+      };
+    }
+  }
+
+  if (host.includes('vk.com') || host.includes('vkvideo.ru')) {
+    if (url.pathname.includes('video_ext.php')) {
+      return { source: 'embed', provider: 'vk', embedUrl: url.href, titleHint: 'VK' };
+    }
+    const m = url.pathname.match(/video(-?\d+)_(\d+)/);
+    if (m) {
+      const oid = m[1];
+      const vid = m[2];
+      return {
+        source: 'embed',
+        provider: 'vk',
+        embedUrl: `https://vk.com/video_ext.php?oid=${encodeURIComponent(oid)}&id=${encodeURIComponent(vid)}`,
+        titleHint: 'VK',
+      };
+    }
+  }
+
+  if (host.includes('dailymotion.com')) {
+    const m = url.pathname.match(/\/video\/([^_?/]+)/);
+    if (m) {
+      return {
+        source: 'embed',
+        provider: 'dailymotion',
+        embedUrl: `https://www.dailymotion.com/embed/video/${m[1]}`,
+        titleHint: 'Dailymotion',
+      };
+    }
+  }
+
+  if (u.includes('embed') || u.includes('iframe')) {
+    return { source: 'embed', provider: 'iframe', embedUrl: u, titleHint: 'Embed' };
+  }
+
+  return null;
+}
+
+async function loadVideoConfig() {
+  if (!currentToken) return;
+  try {
+    const r = await fetch(`${API_BASE}/contents/${VIDEO_CONFIG_PATH}`, {
+      headers: { Authorization: `token ${currentToken}`, Accept: 'application/vnd.github.v3+json' },
+    });
+    if (r.ok) {
+      const data = await r.json();
+      videoConfigSha = data.sha;
+      const decoded = fromBase64(data.content.replace(/\n/g, ''));
+      videoConfig = JSON.parse(decoded);
+    }
+  } catch (_) {
+    videoConfigSha = null;
+  }
+  if (!videoConfig.playlist) videoConfig.playlist = [];
+  renderVideoPlaylist();
+}
+
+async function saveVideoConfig(config) {
+  const content = toBase64(JSON.stringify(config, null, 2));
+  const body = {
+    message: 'feat: update video player config',
+    content,
+    ...(videoConfigSha ? { sha: videoConfigSha } : {}),
+  };
+  const r = await fetch(`${API_BASE}/contents/${VIDEO_CONFIG_PATH}`, {
+    method: 'PUT',
+    headers: {
+      Authorization: `token ${currentToken}`,
+      Accept: 'application/vnd.github.v3+json',
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(body),
+  });
+  if (!r.ok) {
+    const err = await r.json().catch(() => ({}));
+    throw new Error(err.message || `HTTP ${r.status}`);
+  }
+  const data = await r.json();
+  videoConfigSha = data.content.sha;
+  videoConfig = config;
+  return data;
+}
+
+async function uploadVideoFile(file) {
+  const MAX_SIZE = 80 * 1024 * 1024;
+  if (file.size > MAX_SIZE) {
+    throw new Error(`Файл слишком большой (${(file.size / 1024 / 1024).toFixed(1)} МБ > 80 МБ)`);
+  }
+  const filename = sanitizeFilename(file.name);
+  const path = `${VIDEO_DIR}${filename}`;
+  let existingSha = null;
+  try {
+    const checkR = await fetch(`${API_BASE}/contents/${path}`, {
+      headers: { Authorization: `token ${currentToken}`, Accept: 'application/vnd.github.v3+json' },
+    });
+    if (checkR.ok) {
+      const existing = await checkR.json();
+      existingSha = existing.sha;
+    }
+  } catch (_) {}
+
+  const b64 = await fileToBase64(file);
+  const putBody = {
+    message: `feat: upload video ${filename}`,
+    content: b64,
+    ...(existingSha ? { sha: existingSha } : {}),
+  };
+  const putR = await fetch(`${API_BASE}/contents/${path}`, {
+    method: 'PUT',
+    headers: {
+      Authorization: `token ${currentToken}`,
+      Accept: 'application/vnd.github.v3+json',
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(putBody),
+  });
+  if (!putR.ok) {
+    const err = await putR.json().catch(() => ({}));
+    throw new Error(err.message || `HTTP ${putR.status}`);
+  }
+  return filename;
+}
+
+function renderVideoPlaylist() {
+  const list = document.getElementById('video-track-list');
+  if (!list) return;
+
+  const tracks = videoConfig.playlist || [];
+  if (tracks.length === 0) {
+    list.innerHTML =
+      '<div style="font-family:var(--font-mono);font-size:0.62rem;color:var(--text-muted);text-align:center;padding:1rem;letter-spacing:1px;">ПЛЕЙЛИСТ ПУСТ — ЗАГРУЗИ ФАЙЛ ИЛИ ДОБАВЬ ССЫЛКУ</div>';
+    return;
+  }
+
+  list.innerHTML = tracks
+    .map((tr, i) => {
+      const on = tr.enabled !== false;
+      let meta = '';
+      let badge = '';
+      if (tr.source === 'local') {
+        meta = escapeAdminHtml(tr.filename || '');
+        badge = 'FILE';
+      } else if (tr.source === 'stream') {
+        meta = escapeAdminHtml((tr.streamUrl || '').slice(0, 72));
+        badge = 'URL';
+      } else {
+        meta = escapeAdminHtml((tr.embedUrl || '').slice(0, 72));
+        badge = (tr.provider || 'WEB').toUpperCase().slice(0, 6);
+      }
+      return `
+    <div class="audio-track-item video-track-item" draggable="true" data-index="${i}">
+      <label class="video-on-label" title="Показывать на главной">
+        <input type="checkbox" class="video-enabled-cb" data-index="${i}" ${on ? 'checked' : ''}>
+        <span>ЭФИР</span>
+      </label>
+      <span class="audio-track-drag" title="Перетащить">⠿</span>
+      <div class="audio-track-info-text" style="flex:1;min-width:0;">
+        <input type="text" class="form-input neon-input video-title-input" data-index="${i}"
+               value="${escapeAdminHtml(tr.title || '')}"
+               placeholder="Заголовок"
+               style="font-size:0.65rem;padding:0.35rem 0.5rem;margin-bottom:0.25rem;width:100%;">
+        <div style="font-family:var(--font-mono);font-size:0.52rem;color:var(--text-muted);word-break:break-all;">${meta}</div>
+      </div>
+      <div class="audio-track-size" style="font-size:0.5rem;">${badge}</div>
+      <span class="audio-track-status done">✓</span>
+      <button type="button" class="audio-track-del video-track-del" data-index="${i}" title="Удалить">✕</button>
+    </div>`;
+    })
+    .join('');
+
+  list.querySelectorAll('.video-enabled-cb').forEach(cb => {
+    cb.addEventListener('change', () => {
+      const idx = parseInt(cb.dataset.index, 10);
+      if (!videoConfig.playlist[idx]) return;
+      videoConfig.playlist[idx].enabled = cb.checked;
+    });
+  });
+
+  list.querySelectorAll('.video-title-input').forEach(inp => {
+    inp.addEventListener('change', () => {
+      const idx = parseInt(inp.dataset.index, 10);
+      if (videoConfig.playlist[idx]) videoConfig.playlist[idx].title = inp.value.trim();
+    });
+  });
+
+  list.querySelectorAll('.video-track-del').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const idx = parseInt(btn.dataset.index, 10);
+      videoConfig.playlist.splice(idx, 1);
+      renderVideoPlaylist();
+    });
+  });
+
+  setupVideoDragSort(list, '.video-track-item');
+}
+
+function setupVideoDragSort(container, selector) {
+  let dragging = null;
+  container.querySelectorAll(selector).forEach(item => {
+    item.addEventListener('dragstart', () => {
+      dragging = item;
+      setTimeout(() => item.classList.add('dragging'), 0);
+    });
+    item.addEventListener('dragend', () => {
+      item.classList.remove('dragging');
+      dragging = null;
+      const newOrder = [];
+      container.querySelectorAll(selector).forEach(el => {
+        const idx = parseInt(el.dataset.index, 10);
+        if (!isNaN(idx) && videoConfig.playlist[idx]) newOrder.push(videoConfig.playlist[idx]);
+      });
+      videoConfig.playlist = newOrder;
+      renderVideoPlaylist();
+    });
+    item.addEventListener('dragover', e => {
+      e.preventDefault();
+      if (!dragging || dragging === item) return;
+      const rect = item.getBoundingClientRect();
+      const mid = rect.top + rect.height / 2;
+      if (e.clientY < mid) container.insertBefore(dragging, item);
+      else container.insertBefore(dragging, item.nextSibling);
+    });
+  });
+}
+
+function setupVideoUpload() {
+  const zone = document.getElementById('video-upload-zone');
+  const input = document.getElementById('video-file-input');
+  if (!zone || !input) return;
+  if (zone.dataset.uploadInited) return;
+  zone.dataset.uploadInited = '1';
+
+  zone.addEventListener('dragover', e => {
+    e.preventDefault();
+    zone.classList.add('dragover');
+  });
+  zone.addEventListener('dragleave', () => zone.classList.remove('dragover'));
+  zone.addEventListener('drop', e => {
+    e.preventDefault();
+    zone.classList.remove('dragover');
+    handleVideoFiles(e.dataTransfer.files);
+  });
+  input.addEventListener('change', () => handleVideoFiles(input.files));
+}
+
+async function handleVideoFiles(files) {
+  const input = document.getElementById('video-file-input');
+  if (!currentToken) return;
+
+  for (const file of files) {
+    if (!file.type.startsWith('video/') && !/\.(mp4|webm|ogg|mov)$/i.test(file.name)) continue;
+
+    const list = document.getElementById('video-track-list');
+    const item = document.createElement('div');
+    item.className = 'audio-track-item';
+    item.innerHTML = `
+      <span class="audio-track-drag">⠿</span>
+      <div class="audio-track-info-text">
+        <div class="audio-track-name">${escapeAdminHtml(file.name)}</div>
+        <div style="font-size:0.55rem;color:var(--text-muted);">ЗАГРУЗКА...</div>
+      </div>
+      <span class="audio-track-status uploading">...</span>`;
+    list.appendChild(item);
+
+    try {
+      const filename = await uploadVideoFile(file);
+      item.remove();
+      const baseTitle = file.name.replace(/\.[^.]+$/, '');
+      videoConfig.playlist.push({
+        id: genId(),
+        title: baseTitle,
+        enabled: true,
+        source: 'local',
+        filename,
+      });
+      renderVideoPlaylist();
+    } catch (err) {
+      item.querySelector('.audio-track-status').textContent = 'ERR';
+      item.querySelector('.audio-track-status').className = 'audio-track-status error';
+      console.warn(err);
+    }
+  }
+  if (input) input.value = '';
+}
+
+function setupVideoSave() {
+  const btn = document.getElementById('video-save-btn');
+  if (!btn || btn.dataset.bound) return;
+  btn.dataset.bound = '1';
+  btn.addEventListener('click', async () => {
+    const status = document.getElementById('video-save-status');
+    if (status) {
+      status.textContent = 'СОХРАНЕНИЕ...';
+      status.className = 'audio-save-status loading';
+    }
+    try {
+      await saveVideoConfig({ ...videoConfig, playlist: [...videoConfig.playlist] });
+      if (status) {
+        status.textContent = '✓ СОХРАНЕНО';
+        status.className = 'audio-save-status success';
+      }
+      if (window.videoPlayer && typeof window.videoPlayer.reload === 'function') {
+        window.videoPlayer.reload();
+      }
+    } catch (err) {
+      if (status) {
+        status.textContent = `ОШИБКА: ${err.message}`;
+        status.className = 'audio-save-status error';
+      }
+    }
+  });
+}
+
+function setupVideoUrlButton() {
+  const btn = document.getElementById('video-add-url-btn');
+  if (!btn || btn.dataset.bound) return;
+  btn.dataset.bound = '1';
+  btn.addEventListener('click', () => {
+    const urlInp = document.getElementById('video-url-input');
+    const titleInp = document.getElementById('video-url-title');
+    const raw = urlInp?.value?.trim() || '';
+    const parsed = parseVideoUrl(raw);
+    if (!parsed) {
+      alert('Не удалось распознать ссылку. Поддерживаются YouTube, Vimeo, Rutube, VK, Dailymotion и прямые .mp4/.webm');
+      return;
+    }
+    const title = (titleInp?.value?.trim() || parsed.titleHint || 'Видео');
+    const entry = { id: genId(), title, enabled: true };
+    if (parsed.source === 'stream') {
+      entry.source = 'stream';
+      entry.provider = parsed.provider || 'direct';
+      entry.streamUrl = parsed.streamUrl;
+    } else {
+      entry.source = 'embed';
+      entry.provider = parsed.provider || 'iframe';
+      entry.embedUrl = parsed.embedUrl;
+    }
+    videoConfig.playlist.push(entry);
+    if (urlInp) urlInp.value = '';
+    if (titleInp) titleInp.value = '';
+    renderVideoPlaylist();
+  });
+}
+
+function initVideoTab() {
+  if (!currentToken) return;
+  loadVideoConfig();
+  if (!_videoTabSetupDone) {
+    _videoTabSetupDone = true;
+    setupVideoUpload();
+    setupVideoSave();
+    setupVideoUrlButton();
   }
 }
 

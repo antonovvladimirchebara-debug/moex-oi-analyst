@@ -55,6 +55,7 @@
   <link rel="stylesheet" href="css/style.css">
   <link rel="stylesheet" href="css/animations.css">
   <link rel="stylesheet" href="css/audio-player.css">
+  <link rel="stylesheet" href="css/video-player.css">
 
   <!-- Favicon -->
   <link rel="icon" type="image/x-icon" href="favicon.ico">
@@ -112,7 +113,10 @@
   <!-- HERO SECTION -->
   <header class="hero" role="banner">
     <div class="hero-content">
-      <div id="title-3d-container" aria-hidden="true"></div>
+        <div class="hero-right-column">
+          <div id="title-3d-container" aria-hidden="true"></div>
+          <div id="hero-video-mount" data-video-root></div>
+        </div>
       <div class="hero-text">
         <div class="hero-badge">
           <span class="badge-dot"></span>
@@ -464,6 +468,7 @@
   <script src="js/trading-hours.js" defer></script>
   <script src="js/moex-news.js" defer></script>
   <script src="js/audio-player.js" defer></script>
+  <script src="js/video-player.js" defer></script>
   <!-- GoatCounter analytics -->
   <script data-goatcounter="https://moex-oi.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
   <script>
