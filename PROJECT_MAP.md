@@ -87,7 +87,7 @@ moex-oi-analyst/
 - `generateTagsFromText()` → словарь 35+ категорий, 120+ паттернов MOEX-терминов
 - `triggerAutoTags()` → кнопка ⚡ АВТОТЕГИ + debounced re-run при изменении текста
 - EasyMDE редактор с автосохранением черновика
-- **Audio Admin:** `initAudioTab()`, `uploadAudioFile()`, `saveAudioConfig()`, Яндекс OAuth
+- **Audio Admin:** плейлист как у видео (`normalizeAudioPlaylistTracks`, `parseAudioStreamUrl`, ЭФИР, URL, drag), Яндекс OAuth
 - **Video Admin:** `initVideoTab()`, `uploadVideoFile()`, `saveVideoConfig()`, `parseVideoUrl()` — YouTube/Vimeo/Rutube/VK/прямой MP4
 
 ### Видеоплеер (video-player.js + css/video-player.css)
@@ -116,11 +116,12 @@ moex-oi-analyst/
 - Progress bar: seek by click/drag, neon fill gradient
 - Controls: ⏮ ▶/⏸ ⏭ + volume + shuffle + repeat (off/all/one)
 
-**LOCAL режим:**
-- Источник: файлы из репо `/audio/` (относительный URL)
-- Config: `audio-config.json` → `localTracks[]` → `{ id, title, artist, filename }`
-- Autoplay запрещён браузером — старт только по клику пользователя
-- AudioContext создаётся lazily на первый клик play
+**LOCAL + URL плейлист (как видеоплеер):**
+- `localTracks[]`: каждый элемент — `source: "local" | "stream"`, `enabled` (в эфире), `title`, `artist`
+- **local:** `filename` → URL `audio/{filename}`
+- **stream:** `streamUrl` (https) — HTML5 Audio; без CORS у внешнего URL FFT может не работать
+- Воспроизводятся только треки с `enabled !== false`; порядок в JSON = порядок next/prev
+- Autoplay запрещён — старт по клику; AudioContext — на первый play
 
 **ЯНДЕКС режим:**
 - OAuth implicit flow через Яндекс ID (redirect → token в hash)
@@ -130,7 +131,10 @@ moex-oi-analyst/
 **audio-config.json:**
 ```json
 {
-  "localTracks": [{ "id": "...", "title": "...", "artist": "...", "filename": "track.mp3" }],
+  "localTracks": [
+    { "id": "...", "title": "...", "artist": "...", "filename": "track.mp3", "source": "local", "enabled": true },
+    { "id": "...", "title": "...", "artist": "...", "source": "stream", "streamUrl": "https://...", "enabled": true }
+  ],
   "yandexPlaylists": [{ "kind": 1234, "uid": "login", "title": "..." }],
   "yandexClientId": "...",
   "activeSource": "local"
@@ -147,11 +151,11 @@ OAuth-токен Яндекса хранится в `localStorage['moex_oi_yande
 
 ### Admin — таб АУДИОПЛЕЕР (admin.html + admin.js)
 
-**Секция 1 — ЛОКАЛЬНЫЙ ПЛЕЙЛИСТ:**
-- Drag&drop или клик для выбора файлов
-- Загрузка через GitHub Contents API → `/audio/{filename}` (base64, max 50 MB)
-- Список треков с drag-to-reorder и inline редактированием поля "Исполнитель"
-- Кнопка "СОХРАНИТЬ ПЛЕЙЛИСТ" → обновляет `audio-config.json` в репо
+**Секция 1 — ПЛЕЙЛИСТ (аналог ВИДЕОПЛЕЕР):**
+- Загрузка файлов с ПК → `/audio/` (max 50 MB)
+- Блок **по ссылке:** https URL потока → `parseAudioStreamUrl()` → запись `source: stream`, `streamUrl`
+- Список: чекбокс **ЭФИР** (`enabled`), поля название + исполнитель, бейдж FILE/URL, drag-сортировка, удаление
+- **СОХРАНИТЬ ПЛЕЙЛИСТ** → `audio-config.json`; вызывается `audioPlayer.reload()`
 
 **Секция 2 — ЯНДЕКС МУЗЫКА:**
 - Поле Client ID Яндекс OAuth приложения
@@ -208,6 +212,7 @@ OAuth-токен Яндекса хранится в `localStorage['moex_oi_yande
 | 2026-04-01 | f4d81d6 | docs: ссылка на созданный репозиторий `antonovvladimirchebara-debug.github.io` |
 | 2026-04-01 | a7152e1 | chore: `user-pages-github-io-root/robots.txt` — Sitemap на `/moex-oi-analyst/sitemap.xml` |
 | 2026-04-01 | 4df343a | feat: видеоплеер на главной (3D рамка 16:9), `video-config.json`, admin ВИДЕОПЛЕЕР |
+| 2026-04-01 | —       | feat: аудио-плейлист как у видео — ЭФИР, URL-поток, `enabled`/`source` в `localTracks` |
 
 ## Текущее состояние
 
@@ -219,8 +224,8 @@ OAuth-токен Яндекса хранится в `localStorage['moex_oi_yande
 - ✅ Топ-5 новостей MOEX с автообновлением
 - ✅ Автогенерация хештегов в admin-панели
 - ✅ **Мобильная оптимизация:** гамбургер-меню, responsive layout, Three.js mobile mode (30fps, 200 частиц, gyro)
-- ✅ **Аудиоплеер:** neon cyberpunk, canvas FFT visualizer, LOCAL (файлы из репо) + ЯНДЕКС (OAuth embed)
-- ✅ **Admin — АУДИОПЛЕЕР таб:** загрузка файлов, управление плейлистом, Яндекс OAuth, ручной ввод URL
+- ✅ **Аудиоплеер:** neon cyberpunk, FFT; плейлист LOCAL + **URL-поток**; только треки с **ЭФИР**; ЯНДЕКС (OAuth embed)
+- ✅ **Admin — АУДИОПЛЕЕР:** тот же UX что видео (ЭФИР, ссылка, порядок drag), плюс Яндекс
 - ✅ **Видеоплеер:** hero справа, плейлист local + embed (YouTube/Vimeo/Rutube/VK и др.) + прямые URL; вкладка **ВИДЕОПЛЕЕР** в admin
 - ✅ **SEO pre-render:** `scripts/build-posts.js` генерирует `posts/<slug>/index.html` со всеми мета, JSON-LD; GitHub Actions автозапуск при каждом пуше в `posts/**`
 - ✅ **sitemap.xml:** обновлён на статические URL `posts/<slug>/`

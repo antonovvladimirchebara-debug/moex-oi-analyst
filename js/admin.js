@@ -898,6 +898,7 @@ function initAudioTab() {
     _audioTabSetupDone = true;
     setupAudioUpload();
     setupAudioSave();
+    setupAudioUrlButton();
     setupYandexSection();
   }
   checkYandexOAuthReturn();
@@ -919,9 +920,34 @@ async function loadAudioConfig() {
     // File doesn't exist yet — use defaults
     audioConfigSha = null;
   }
+  normalizeAudioPlaylistTracks();
   renderLocalTracksList();
   renderSelectedYandexPlaylists();
   updateYandexConnectionUI();
+}
+
+/** Поля enabled/source по умолчанию (обратная совместимость со старым audio-config). */
+function normalizeAudioPlaylistTracks() {
+  if (!audioConfig.localTracks) audioConfig.localTracks = [];
+  audioConfig.localTracks.forEach(t => {
+    if (t.enabled === undefined) t.enabled = true;
+    if (!t.source) {
+      if (t.streamUrl && !t.filename) t.source = 'stream';
+      else t.source = 'local';
+    }
+  });
+}
+
+function parseAudioStreamUrl(raw) {
+  const u = raw.trim();
+  if (!u) return null;
+  try {
+    const url = new URL(u.startsWith('http') ? u : `https://${u}`);
+    if (url.protocol !== 'http:' && url.protocol !== 'https:') return null;
+    return { streamUrl: url.href };
+  } catch {
+    return null;
+  }
 }
 
 // ── Save audio-config.json to GitHub ─────────────────────────────
@@ -1031,22 +1057,37 @@ function sanitizeFilename(name) {
   return base + ext;
 }
 
-// ── Render local tracks list in admin ─────────────────────────────
+// ── Render local + URL playlist (как видеоплеер) ──────────────────
 function renderLocalTracksList() {
   const list = document.getElementById('audio-track-list');
   if (!list) return;
 
   const tracks = audioConfig.localTracks || [];
   if (tracks.length === 0) {
-    list.innerHTML = '<div style="font-family:var(--font-mono);font-size:0.62rem;color:var(--text-muted);text-align:center;padding:1rem;letter-spacing:1px;">ПЛЕЙЛИСТ ПУСТ — ЗАГРУЗИ ФАЙЛЫ</div>';
+    list.innerHTML = '<div style="font-family:var(--font-mono);font-size:0.62rem;color:var(--text-muted);text-align:center;padding:1rem;letter-spacing:1px;">ПЛЕЙЛИСТ ПУСТ — ЗАГРУЗИ ФАЙЛ ИЛИ ДОБАВЬ URL</div>';
     return;
   }
 
-  list.innerHTML = tracks.map((tr, i) => `
-    <div class="audio-track-item" draggable="true" data-index="${i}">
-      <span class="audio-track-drag" title="Перетащить для сортировки">⠿</span>
-      <div class="audio-track-info-text">
-        <div class="audio-track-name">${escapeAdminHtml(tr.title || tr.filename)}</div>
+  list.innerHTML = tracks
+    .map((tr, i) => {
+      const on = tr.enabled !== false;
+      const isStream = tr.source === 'stream' || (tr.streamUrl && !tr.filename);
+      const badge = isStream ? 'URL' : 'FILE';
+      const meta = isStream
+        ? escapeAdminHtml((tr.streamUrl || '').slice(0, 80))
+        : escapeAdminHtml(tr.filename || '');
+      return `
+    <div class="audio-track-item audio-playlist-item" draggable="true" data-index="${i}">
+      <label class="video-on-label" title="В плейлисте на сайте">
+        <input type="checkbox" class="audio-enabled-cb" data-index="${i}" ${on ? 'checked' : ''}>
+        <span>ЭФИР</span>
+      </label>
+      <span class="audio-track-drag" title="Перетащить">⠿</span>
+      <div class="audio-track-info-text" style="flex:1;min-width:0;">
+        <input type="text" class="form-input neon-input audio-title-input" data-index="${i}"
+               value="${escapeAdminHtml(tr.title || '')}"
+               placeholder="Название"
+               style="font-size:0.65rem;padding:0.35rem 0.5rem;margin-bottom:0.25rem;width:100%;">
         <div class="audio-track-artist-edit">
           <input type="text" class="audio-artist-input"
                  value="${escapeAdminHtml(tr.artist || '')}"
@@ -1054,40 +1095,57 @@ function renderLocalTracksList() {
                  data-index="${i}"
                  style="background:transparent;border:none;border-bottom:1px solid rgba(0,255,255,0.1);
                         color:var(--text-secondary);font-family:var(--font-mono);font-size:0.58rem;
-                        width:120px;outline:none;letter-spacing:0.5px;">
+                        width:100%;max-width:220px;outline:none;letter-spacing:0.5px;">
         </div>
+        <div style="font-family:var(--font-mono);font-size:0.52rem;color:var(--text-muted);word-break:break-all;">${meta}</div>
       </div>
-      <div class="audio-track-size">${tr.filename}</div>
-      <span class="audio-track-status done">✓ В РЕПО</span>
-      <button class="audio-track-del" data-index="${i}" title="Удалить из плейлиста">✕</button>
-    </div>
-  `).join('');
+      <div class="audio-track-size" style="font-size:0.5rem;">${badge}</div>
+      <span class="audio-track-status done">✓</span>
+      <button type="button" class="audio-track-del" data-index="${i}" title="Удалить">✕</button>
+    </div>`;
+    })
+    .join('');
 
-  // Delete buttons
+  list.querySelectorAll('.audio-enabled-cb').forEach(cb => {
+    cb.addEventListener('change', () => {
+      const idx = parseInt(cb.dataset.index, 10);
+      if (audioConfig.localTracks[idx]) {
+        audioConfig.localTracks[idx].enabled = cb.checked;
+      }
+    });
+  });
+
+  list.querySelectorAll('.audio-title-input').forEach(inp => {
+    inp.addEventListener('change', () => {
+      const idx = parseInt(inp.dataset.index, 10);
+      if (audioConfig.localTracks[idx]) {
+        audioConfig.localTracks[idx].title = inp.value.trim();
+      }
+    });
+  });
+
+  list.querySelectorAll('.audio-artist-input').forEach(inp => {
+    inp.addEventListener('change', () => {
+      const idx = parseInt(inp.dataset.index, 10);
+      if (audioConfig.localTracks[idx]) {
+        audioConfig.localTracks[idx].artist = inp.value.trim();
+      }
+    });
+  });
+
   list.querySelectorAll('.audio-track-del').forEach(btn => {
     btn.addEventListener('click', () => {
-      const idx = parseInt(btn.dataset.index);
+      const idx = parseInt(btn.dataset.index, 10);
       audioConfig.localTracks.splice(idx, 1);
       renderLocalTracksList();
     });
   });
 
-  // Artist inputs
-  list.querySelectorAll('.audio-artist-input').forEach(inp => {
-    inp.addEventListener('change', () => {
-      const idx = parseInt(inp.dataset.index);
-      audioConfig.localTracks[idx].artist = inp.value.trim();
-    });
-  });
-
-  // Drag-to-reorder
-  setupDragSort(list, '.audio-track-item');
+  setupAudioPlaylistDragSort(list, '.audio-playlist-item');
 }
 
-// ── Drag-to-reorder tracks ────────────────────────────────────────
-function setupDragSort(container, selector) {
+function setupAudioPlaylistDragSort(container, selector) {
   let dragging = null;
-
   container.querySelectorAll(selector).forEach(item => {
     item.addEventListener('dragstart', () => {
       dragging = item;
@@ -1096,10 +1154,9 @@ function setupDragSort(container, selector) {
     item.addEventListener('dragend', () => {
       item.classList.remove('dragging');
       dragging = null;
-      // Update config order
       const newOrder = [];
       container.querySelectorAll(selector).forEach(el => {
-        const idx = parseInt(el.dataset.index);
+        const idx = parseInt(el.dataset.index, 10);
         if (!isNaN(idx) && audioConfig.localTracks[idx]) {
           newOrder.push(audioConfig.localTracks[idx]);
         }
@@ -1112,12 +1169,37 @@ function setupDragSort(container, selector) {
       if (!dragging || dragging === item) return;
       const rect = item.getBoundingClientRect();
       const mid = rect.top + rect.height / 2;
-      if (e.clientY < mid) {
-        container.insertBefore(dragging, item);
-      } else {
-        container.insertBefore(dragging, item.nextSibling);
-      }
+      if (e.clientY < mid) container.insertBefore(dragging, item);
+      else container.insertBefore(dragging, item.nextSibling);
     });
+  });
+}
+
+function setupAudioUrlButton() {
+  const btn = document.getElementById('audio-add-url-btn');
+  if (!btn || btn.dataset.bound) return;
+  btn.dataset.bound = '1';
+  btn.addEventListener('click', () => {
+    const urlInp = document.getElementById('audio-url-input');
+    const titleInp = document.getElementById('audio-url-title');
+    const artistInp = document.getElementById('audio-url-artist');
+    const parsed = parseAudioStreamUrl(urlInp?.value || '');
+    if (!parsed) {
+      alert('Нужна корректная http(s) ссылка на аудиопоток.');
+      return;
+    }
+    audioConfig.localTracks.push({
+      id: genId(),
+      title: (titleInp?.value || '').trim() || 'Поток',
+      artist: (artistInp?.value || '').trim(),
+      source: 'stream',
+      streamUrl: parsed.streamUrl,
+      enabled: true,
+    });
+    if (urlInp) urlInp.value = '';
+    if (titleInp) titleInp.value = '';
+    if (artistInp) artistInp.value = '';
+    renderLocalTracksList();
   });
 }
 
@@ -1197,10 +1279,12 @@ async function handleAudioFiles(files) {
       // Add to config
       const trackTitle = file.name.replace(/\.[^.]+$/, '');
       audioConfig.localTracks.push({
-        id: Date.now().toString(36),
+        id: genId(),
         title: trackTitle,
         artist: '',
-        filename
+        filename,
+        source: 'local',
+        enabled: true,
       });
 
       item.remove();
@@ -1226,6 +1310,9 @@ function setupAudioSave() {
     try {
       await saveAudioConfig({ ...audioConfig });
       setAudioSaveStatus('✓ ПЛЕЙЛИСТ СОХРАНЁН В РЕПОЗИТОРИЙ', 'success');
+      if (window.audioPlayer && typeof window.audioPlayer.reload === 'function') {
+        window.audioPlayer.reload();
+      }
     } catch (err) {
       setAudioSaveStatus(`ОШИБКА: ${err.message}`, 'error');
     } finally {
@@ -1284,6 +1371,9 @@ function setupYandexSection() {
       audioConfig.yandexClientId = clientId;
       await saveAudioConfig({ ...audioConfig });
       setYandexSaveStatus('✓ НАСТРОЙКИ ЯНДЕКС СОХРАНЕНЫ', 'success');
+      if (window.audioPlayer && typeof window.audioPlayer.reload === 'function') {
+        window.audioPlayer.reload();
+      }
     } catch (err) {
       setYandexSaveStatus(`ОШИБКА: ${err.message}`, 'error');
     } finally {

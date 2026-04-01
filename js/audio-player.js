@@ -3,7 +3,7 @@
  * MOEX/OI Analyst — Deep Space theme
  *
  * Features:
- *  - Local tracks (from GitHub repo /audio/)
+ *  - Playlist: локальные файлы (/audio/) + потоки по URL; флаг enabled (как у видео)
  *  - Яндекс Музыка integration (OAuth Яндекс ID + embed)
  *  - Canvas FFT visualizer (neon bars)
  *  - Shuffle, Repeat modes
@@ -35,6 +35,8 @@
     yandexUid: null,
     selectedYandexPlaylist: null,  // { kind, uid, title }
     isDraggingProgress: false,
+    /** Индексы в localTracks с enabled и валидным источником */
+    activeLocalIndexes: [],
   };
 
   // ── Constants (admin detection) ───────────────────────────────
@@ -51,6 +53,33 @@
   let elTrackCount;
   let visIdleEl;
   let wrapEl;
+
+  function rebuildActiveLocalIndexes() {
+    state.activeLocalIndexes = [];
+    const tracks = state.config.localTracks || [];
+    tracks.forEach((t, i) => {
+      if (!t || t.enabled === false) return;
+      const isStream = t.source === 'stream' || (t.streamUrl && !t.filename);
+      if (isStream) {
+        if (t.streamUrl) state.activeLocalIndexes.push(i);
+      } else if (t.filename) {
+        state.activeLocalIndexes.push(i);
+      }
+    });
+  }
+
+  function activeLocalCount() {
+    rebuildActiveLocalIndexes();
+    return state.activeLocalIndexes.length;
+  }
+
+  function trackAudioSrc(track) {
+    if (!track) return '';
+    const isStream = track.source === 'stream' || (track.streamUrl && !track.filename);
+    if (isStream && track.streamUrl) return track.streamUrl;
+    if (track.filename) return `audio/${track.filename}`;
+    return '';
+  }
 
   // ── Build compact floating HTML ───────────────────────────────
   function buildHTML() {
@@ -278,18 +307,33 @@
       // Config not found — use defaults
     }
 
+    if (!state.config.localTracks) state.config.localTracks = [];
+    state.config.localTracks.forEach(t => {
+      if (!t) return;
+      if (t.enabled === undefined) t.enabled = true;
+      if (!t.source) {
+        if (t.streamUrl && !t.filename) t.source = 'stream';
+        else t.source = 'local';
+      }
+    });
+
+    rebuildActiveLocalIndexes();
+    state.currentIndex = 0;
+
     // Update track count
     updateTrackCount();
 
-    // Load first track metadata if local
-    if (state.config.localTracks.length > 0) {
-      renderTrackInfo(state.config.localTracks[0]);
+    // Первый активный трек — превью в UI
+    if (state.activeLocalIndexes.length > 0) {
+      const first = state.config.localTracks[state.activeLocalIndexes[0]];
+      renderTrackInfo(first);
     } else {
-      // No tracks — show admin hint or idle
+      // Нет активных треков
       const titleEl  = document.getElementById('ap-title');
       const artistEl = document.getElementById('ap-artist');
       const isAdmin  = !!localStorage.getItem(GH_TOKEN_KEY);
-      if (titleEl)  titleEl.textContent  = 'НЕТ ТРЕКОВ';
+      const hasRows = state.config.localTracks.length > 0;
+      if (titleEl) titleEl.textContent = hasRows ? 'ВСЕ ТРЕКИ ВЫКЛ' : 'НЕТ ТРЕКОВ';
       if (artistEl) {
         if (isAdmin) {
           artistEl.innerHTML =
@@ -407,19 +451,24 @@
   }
 
   // ── Play a track by index ─────────────────────────────────────
+  /** index — позиция в активном плейлисте (только enabled) */
   function playTrack(index) {
-    const tracks = state.config.localTracks;
-    if (!tracks || tracks.length === 0) return;
+    rebuildActiveLocalIndexes();
+    const idxs = state.activeLocalIndexes;
+    if (idxs.length === 0) return;
 
-    state.currentIndex = ((index % tracks.length) + tracks.length) % tracks.length;
-    const track = tracks[state.currentIndex];
+    state.currentIndex = ((index % idxs.length) + idxs.length) % idxs.length;
+    const cfgIdx = idxs[state.currentIndex];
+    const track = state.config.localTracks[cfgIdx];
+    const src = trackAudioSrc(track);
+    if (!src) return;
 
     setupAudioContext();
     if (state.audioCtx && state.audioCtx.state === 'suspended') {
       state.audioCtx.resume();
     }
 
-    audio.src = `audio/${track.filename}`;
+    audio.src = src;
     audio.load();
     audio.play().then(() => {
       state.isPlaying = true;
@@ -435,8 +484,7 @@
   // ── Toggle play/pause ─────────────────────────────────────────
   function togglePlay() {
     if (state.source !== 'local') return;
-    const tracks = state.config.localTracks;
-    if (!tracks || tracks.length === 0) return;
+    if (activeLocalCount() === 0) return;
 
     if (state.isPlaying) {
       audio.pause();
@@ -462,20 +510,20 @@
 
   // ── Prev / Next ───────────────────────────────────────────────
   function prevTrack() {
-    if (state.config.localTracks.length === 0) return;
+    const n = activeLocalCount();
+    if (n === 0) return;
     if (state.shuffle) {
-      const newIdx = Math.floor(Math.random() * state.config.localTracks.length);
-      playTrack(newIdx);
+      playTrack(Math.floor(Math.random() * n));
     } else {
       playTrack(state.currentIndex - 1);
     }
   }
 
   function nextTrack() {
-    if (state.config.localTracks.length === 0) return;
+    const n = activeLocalCount();
+    if (n === 0) return;
     if (state.shuffle) {
-      const newIdx = Math.floor(Math.random() * state.config.localTracks.length);
-      playTrack(newIdx);
+      playTrack(Math.floor(Math.random() * n));
     } else {
       playTrack(state.currentIndex + 1);
     }
@@ -483,10 +531,13 @@
 
   // ── Track ended ───────────────────────────────────────────────
   function onTrackEnded() {
+    const n = activeLocalCount();
+    if (n === 0) return;
+
     if (state.repeat === 'one') {
       audio.currentTime = 0;
       audio.play().catch(() => {});
-    } else if (state.repeat === 'all' || state.currentIndex < state.config.localTracks.length - 1) {
+    } else if (state.repeat === 'all' || state.currentIndex < n - 1) {
       nextTrack();
     } else if (state.shuffle) {
       nextTrack();
@@ -527,11 +578,13 @@
 
   function updateTrackCount() {
     if (!elTrackCount) return;
-    const total = state.config.localTracks.length;
+    rebuildActiveLocalIndexes();
+    const total = state.activeLocalIndexes.length;
     if (total === 0) {
       elTrackCount.textContent = '';
     } else {
-      elTrackCount.textContent = `${state.currentIndex + 1} / ${total}`;
+      const safeIdx = Math.min(state.currentIndex, total - 1);
+      elTrackCount.textContent = `${safeIdx + 1} / ${total}`;
     }
   }
 
