@@ -49,6 +49,7 @@ moex-oi-analyst/
 ├── audio/                — Аудиофайлы (MP3/WAV/OGG), загружаются через admin
 ├── audio-config.json     — Конфиг плеера: localTracks[], yandexPlaylists[], activeSource
 ├── sitemap.xml           — Авто-обновляется при каждом посте через admin.js
+├── user-pages-github-io-root/ — шаблон index.html для репо username.github.io (Яндекс, корень хоста)
 ├── robots.txt            — Allow: /, Disallow: /admin.html
 ├── _config.yml           — GitHub Pages Jekyll config
 ├── README.md
@@ -211,7 +212,7 @@ https://antonovvladimirchebara-debug.github.io/moex-oi-analyst/
 Корень `antonovvladimirchebara-debug.github.io` — 404, нужен полный путь с `/moex-oi-analyst/`
 
 ### Яндекс Вебмастер и корень github.io
-Если в Вебмастере сайт добавлен как `https://antonovvladimirchebara-debug.github.io` (без пути), робот проверяет **главную страницу хоста** — она отдаёт 404, метатег из репо `moex-oi-analyst` там не появится. Варианты: (1) удалить сайт и добавить заново с полным URL блога; (2) создать отдельный репозиторий `antonovvladimirchebara-debug.github.io` с минимальным `index.html` (метатег + редирект на `/moex-oi-analyst/`).
+Если в Вебмастере сайт добавлен как `https://antonovvladimirchebara-debug.github.io` (без пути), робот проверяет **главную страницу хоста** — она отдаёт 404, метатег из репо `moex-oi-analyst` там не появится. Яндекс при добавлении URL с `/moex-oi-analyst/` сводит ресурс к корню хоста. **Решение:** отдельный репозиторий `antonovvladimirchebara-debug.github.io` с `index.html` в корне (метатег + редирект на блог) — шаблон в папке `user-pages-github-io-root/`.
 
 ## Команды
 
