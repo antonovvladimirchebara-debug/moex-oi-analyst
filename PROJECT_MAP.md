@@ -220,7 +220,7 @@ OAuth-токен Яндекса хранится в `localStorage['moex_oi_yande
 | 2026-04-01 | a7152e1 | chore: `user-pages-github-io-root/robots.txt` — Sitemap на `/moex-oi-analyst/sitemap.xml` |
 | 2026-04-01 | 4df343a | feat: видеоплеер на главной (3D рамка 16:9), `video-config.json`, admin ВИДЕОПЛЕЕР |
 | 2026-04-01 | 5645ae8 | feat: аудио-плейлист как у видео — ЭФИР, URL-поток, `enabled`/`source` в `localTracks` |
-| 2026-04-01 | —       | feat: несколько именованных аудио-плейлистов, `activePlaylistId`, миграция с `localTracks` |
+| 2026-04-01 | 677cf94 | feat: несколько именованных аудио-плейлистов, `activePlaylistId`, миграция с `localTracks` |
 
 ## Текущее состояние
 
