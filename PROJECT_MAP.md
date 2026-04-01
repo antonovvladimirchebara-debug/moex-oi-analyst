@@ -213,7 +213,7 @@ https://antonovvladimirchebara-debug.github.io/moex-oi-analyst/
 Корень `antonovvladimirchebara-debug.github.io` — 404, нужен полный путь с `/moex-oi-analyst/`
 
 ### Яндекс Вебмастер и корень github.io
-Если в Вебмастере сайт добавлен как `https://antonovvladimirchebara-debug.github.io` (без пути), робот проверяет **главную страницу хоста** — она отдаёт 404, метатег из репо `moex-oi-analyst` там не появится. Яндекс при добавлении URL с `/moex-oi-analyst/` сводит ресурс к корню хоста. **Решение:** отдельный репозиторий `antonovvladimirchebara-debug.github.io` с `index.html` в корне (метатег + редирект на блог) — шаблон в папке `user-pages-github-io-root/`.
+Если в Вебмастере сайт добавлен как `https://antonovvladimirchebara-debug.github.io` (без пути), робот проверяет **главную страницу хоста** — она отдаёт 404, метатег из репо `moex-oi-analyst` там не появится. Яндекс при добавлении URL с `/moex-oi-analyst/` сводит ресурс к корню хоста. **Решение:** отдельный репозиторий `antonovvladimirchebara-debug.github.io` с `index.html` в корне (метатег + редирект на блог) — репозиторий создан и задеплоен: <https://github.com/antonovvladimirchebara-debug/antonovvladimirchebara-debug.github.io> (шаблон также в `user-pages-github-io-root/` в репо блога).
 
 ## Команды
 
