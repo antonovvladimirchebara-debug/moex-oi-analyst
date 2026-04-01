@@ -175,7 +175,7 @@ OAuth-токен Яндекса хранится в `localStorage['moex_oi_yande
 | 2026-03-29 | 8a7c0e7 | feat: полная мобильная оптимизация — гамбургер-меню, responsive CSS, Three.js mobile mode |
 | 2026-03-31 | —       | feat: аудиоплеер — neon cyberpunk, FFT visualizer, Яндекс OAuth, admin upload |
 | 2026-03-31 | 4aacbe8 | feat: SEO — статические HTML постов, GitHub Actions pre-render, evergreen контент |
-| 2026-04-01 | e06a679 | chore: метатег Яндекс Вебмастер `yandex-verification` (index, blog, post) |
+| 2026-04-01 | 79d0865 | chore: метатег Яндекс Вебмастер `yandex-verification` (index, blog, post) |
 
 ## Текущее состояние
 
