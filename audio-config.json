@@ -42,5 +42,6 @@
   "activePlaylistId": "ap-main",
   "yandexPlaylists": [],
   "yandexClientId": "",
-  "activeSource": "local"
+  "activeSource": "local",
+  "localTracks": []
 }
