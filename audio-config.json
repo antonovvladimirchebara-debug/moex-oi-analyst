@@ -1,38 +1,45 @@
 {
-  "localTracks": [
+  "playlists": [
     {
-      "id": "mneoo8ov",
-      "title": "audio_2026-03-31_18-57-42",
-      "artist": "",
-      "filename": "audio_2026-03-31_18-57-42.ogg",
-      "source": "local",
-      "enabled": true
-    },
-    {
-      "id": "2026-04-01-sj1kbd",
-      "title": "Vasya_Oblomov_-_Mesto_gde_my_rosli_80123460",
-      "artist": "",
-      "filename": "vasya_oblomov_-_mesto_gde_my_rosli_80123460.mp3",
-      "source": "local",
-      "enabled": true
-    },
-    {
-      "id": "2026-04-01-aoln3r",
-      "title": "Vasya_Oblomov_-_Vremya_zhit_i_vremya_umirat_80204669",
-      "artist": "",
-      "filename": "vasya_oblomov_-_vremya_zhit_i_vremya_umirat_80204669.mp3",
-      "source": "local",
-      "enabled": true
-    },
-    {
-      "id": "2026-04-01-hakzrk",
-      "title": "ESTRADARADA_-_Noch_kosmonavtiki_Put_pobeditelya_73134922",
-      "artist": "",
-      "filename": "estradarada_-_noch_kosmonavtiki_put_pobeditelya_73134922.mp3",
-      "source": "local",
-      "enabled": true
+      "id": "ap-main",
+      "title": "Основной",
+      "tracks": [
+        {
+          "id": "mneoo8ov",
+          "title": "audio_2026-03-31_18-57-42",
+          "artist": "",
+          "filename": "audio_2026-03-31_18-57-42.ogg",
+          "source": "local",
+          "enabled": true
+        },
+        {
+          "id": "2026-04-01-sj1kbd",
+          "title": "Vasya_Oblomov_-_Mesto_gde_my_rosli_80123460",
+          "artist": "",
+          "filename": "vasya_oblomov_-_mesto_gde_my_rosli_80123460.mp3",
+          "source": "local",
+          "enabled": true
+        },
+        {
+          "id": "2026-04-01-aoln3r",
+          "title": "Vasya_Oblomov_-_Vremya_zhit_i_vremya_umirat_80204669",
+          "artist": "",
+          "filename": "vasya_oblomov_-_vremya_zhit_i_vremya_umirat_80204669.mp3",
+          "source": "local",
+          "enabled": true
+        },
+        {
+          "id": "2026-04-01-hakzrk",
+          "title": "ESTRADARADA_-_Noch_kosmonavtiki_Put_pobeditelya_73134922",
+          "artist": "",
+          "filename": "estradarada_-_noch_kosmonavtiki_put_pobeditelya_73134922.mp3",
+          "source": "local",
+          "enabled": true
+        }
+      ]
     }
   ],
+  "activePlaylistId": "ap-main",
   "yandexPlaylists": [],
   "yandexClientId": "",
   "activeSource": "local"

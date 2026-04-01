@@ -3,7 +3,7 @@
  * MOEX/OI Analyst — Deep Space theme
  *
  * Features:
- *  - Playlist: локальные файлы (/audio/) + потоки по URL; флаг enabled (как у видео)
+ *  - Несколько плейлистов в конфиге; на сайте играет activePlaylistId (треки: файлы + URL)
  *  - Яндекс Музыка integration (OAuth Яндекс ID + embed)
  *  - Canvas FFT visualizer (neon bars)
  *  - Shuffle, Repeat modes
@@ -20,7 +20,7 @@
 
   // ── State ─────────────────────────────────────────────────────
   const state = {
-    config: { localTracks: [], yandexPlaylists: [], yandexClientId: '', activeSource: 'local' },
+    config: { playlists: [], activePlaylistId: '', yandexPlaylists: [], yandexClientId: '', activeSource: 'local' },
     currentIndex: 0,
     isPlaying: false,
     source: 'local',          // 'local' | 'yandex'
@@ -35,8 +35,10 @@
     yandexUid: null,
     selectedYandexPlaylist: null,  // { kind, uid, title }
     isDraggingProgress: false,
-    /** Индексы в localTracks с enabled и валидным источником */
+    /** Индексы в localModeTracks с enabled и валидным источником */
     activeLocalIndexes: [],
+    /** Треки активного плейлиста (копия ссылки на массив из конфига) */
+    localModeTracks: [],
   };
 
   // ── Constants (admin detection) ───────────────────────────────
@@ -54,9 +56,18 @@
   let visIdleEl;
   let wrapEl;
 
+  function getActivePlaylistTracks(cfg) {
+    if (Array.isArray(cfg.playlists) && cfg.playlists.length > 0) {
+      const id = cfg.activePlaylistId;
+      const pl = cfg.playlists.find(p => p.id === id) || cfg.playlists[0];
+      return Array.isArray(pl.tracks) ? pl.tracks : [];
+    }
+    return Array.isArray(cfg.localTracks) ? cfg.localTracks : [];
+  }
+
   function rebuildActiveLocalIndexes() {
     state.activeLocalIndexes = [];
-    const tracks = state.config.localTracks || [];
+    const tracks = state.localModeTracks || [];
     tracks.forEach((t, i) => {
       if (!t || t.enabled === false) return;
       const isStream = t.source === 'stream' || (t.streamUrl && !t.filename);
@@ -307,8 +318,8 @@
       // Config not found — use defaults
     }
 
-    if (!state.config.localTracks) state.config.localTracks = [];
-    state.config.localTracks.forEach(t => {
+    state.localModeTracks = getActivePlaylistTracks(state.config);
+    state.localModeTracks.forEach(t => {
       if (!t) return;
       if (t.enabled === undefined) t.enabled = true;
       if (!t.source) {
@@ -325,14 +336,14 @@
 
     // Первый активный трек — превью в UI
     if (state.activeLocalIndexes.length > 0) {
-      const first = state.config.localTracks[state.activeLocalIndexes[0]];
+      const first = state.localModeTracks[state.activeLocalIndexes[0]];
       renderTrackInfo(first);
     } else {
       // Нет активных треков
       const titleEl  = document.getElementById('ap-title');
       const artistEl = document.getElementById('ap-artist');
       const isAdmin  = !!localStorage.getItem(GH_TOKEN_KEY);
-      const hasRows = state.config.localTracks.length > 0;
+      const hasRows = state.localModeTracks.length > 0;
       if (titleEl) titleEl.textContent = hasRows ? 'ВСЕ ТРЕКИ ВЫКЛ' : 'НЕТ ТРЕКОВ';
       if (artistEl) {
         if (isAdmin) {
@@ -459,7 +470,7 @@
 
     state.currentIndex = ((index % idxs.length) + idxs.length) % idxs.length;
     const cfgIdx = idxs[state.currentIndex];
-    const track = state.config.localTracks[cfgIdx];
+    const track = state.localModeTracks[cfgIdx];
     const src = trackAudioSrc(track);
     if (!src) return;
 

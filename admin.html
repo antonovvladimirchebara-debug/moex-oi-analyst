@@ -194,10 +194,27 @@
       <div class="admin-card glass-card">
         <h2 class="admin-section-title">ПЛЕЙЛИСТ AUDIO (ФАЙЛЫ + URL)</h2>
         <p style="font-family:var(--font-mono);font-size:0.65rem;color:var(--text-muted);letter-spacing:1px;margin-bottom:1rem;">
-          Как у вкладки «ВИДЕОПЛЕЕР»: файлы с ПК в репозиторий (/audio/), плюс поток по прямой ссылке (https).
-          Галочка «ЭФИР» включает трек в плеер на сайте. Порядок строк = порядок воспроизведения (перетаскивание).
+          Несколько именованных плейлистов: загрузки с ПК и URL-потоки привязаны к выбранному плейлисту.
+          «НА САЙТЕ ИГРАЕТ» — какой плейлист слушают посетители. «ЭФИР» — какие треки из него в ротации.
           MP3, WAV, OGG, FLAC, M4A до 50 МБ.
         </p>
+
+        <div class="audio-multi-pl-bar" style="margin-bottom:1rem;display:flex;flex-wrap:wrap;gap:0.75rem;align-items:flex-end;">
+          <div class="form-group" style="margin:0;flex:1;min-width:200px;">
+            <label class="form-label" for="audio-edit-playlist-select">РЕДАКТИРОВАТЬ ПЛЕЙЛИСТ</label>
+            <select id="audio-edit-playlist-select" class="form-input neon-input" style="font-size:0.65rem;"></select>
+          </div>
+          <div class="form-group" style="margin:0;flex:1;min-width:200px;">
+            <label class="form-label" for="audio-site-playlist-select">НА САЙТЕ ИГРАЕТ</label>
+            <select id="audio-site-playlist-select" class="form-input neon-input" style="font-size:0.65rem;"></select>
+          </div>
+          <button type="button" class="btn-secondary" id="audio-playlist-new-btn" style="font-size:0.6rem;padding:0.5rem 0.75rem;white-space:nowrap;">+ НОВЫЙ</button>
+          <button type="button" class="btn-secondary" id="audio-playlist-del-btn" style="font-size:0.6rem;padding:0.5rem 0.75rem;white-space:nowrap;">УДАЛИТЬ</button>
+        </div>
+        <div class="form-group" style="margin-bottom:1rem;">
+          <label class="form-label" for="audio-playlist-rename-input">НАЗВАНИЕ РЕДАКТИРУЕМОГО ПЛЕЙЛИСТА</label>
+          <input type="text" id="audio-playlist-rename-input" class="form-input neon-input" placeholder="Например: Разборы недели" style="max-width:400px;">
+        </div>
 
         <!-- Upload zone — label для нативного открытия файлового диалога -->
         <label class="audio-upload-zone" id="audio-upload-zone"

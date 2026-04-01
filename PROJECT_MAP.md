@@ -116,12 +116,12 @@ moex-oi-analyst/
 - Progress bar: seek by click/drag, neon fill gradient
 - Controls: ⏮ ▶/⏸ ⏭ + volume + shuffle + repeat (off/all/one)
 
-**LOCAL + URL плейлист (как видеоплеер):**
-- `localTracks[]`: каждый элемент — `source: "local" | "stream"`, `enabled` (в эфире), `title`, `artist`
-- **local:** `filename` → URL `audio/{filename}`
-- **stream:** `streamUrl` (https) — HTML5 Audio; без CORS у внешнего URL FFT может не работать
-- Воспроизводятся только треки с `enabled !== false`; порядок в JSON = порядок next/prev
-- Autoplay запрещён — старт по клику; AudioContext — на первый play
+**Плейлисты LOCAL + URL:**
+- В конфиге `playlists[]`: `{ id, title, tracks[] }`; **`activePlaylistId`** — какой плейлист слышат посетители
+- Старый формат с плоским `localTracks[]` при загрузке мигрируется в один плейлист «Основной»
+- В `tracks[]`: `source: "local" | "stream"`, `enabled`, `title`, `artist`, `filename` / `streamUrl`
+- **local:** `audio/{filename}`; **stream:** https; только `enabled !== false`; порядок = next/prev
+- Autoplay запрещён; AudioContext на первый play
 
 **ЯНДЕКС режим:**
 - OAuth implicit flow через Яндекс ID (redirect → token в hash)
@@ -131,10 +131,16 @@ moex-oi-analyst/
 **audio-config.json:**
 ```json
 {
-  "localTracks": [
-    { "id": "...", "title": "...", "artist": "...", "filename": "track.mp3", "source": "local", "enabled": true },
-    { "id": "...", "title": "...", "artist": "...", "source": "stream", "streamUrl": "https://...", "enabled": true }
+  "playlists": [
+    {
+      "id": "ap-main",
+      "title": "Основной",
+      "tracks": [
+        { "id": "...", "title": "...", "artist": "...", "filename": "x.mp3", "source": "local", "enabled": true }
+      ]
+    }
   ],
+  "activePlaylistId": "ap-main",
   "yandexPlaylists": [{ "kind": 1234, "uid": "login", "title": "..." }],
   "yandexClientId": "...",
   "activeSource": "local"
@@ -151,11 +157,12 @@ OAuth-токен Яндекса хранится в `localStorage['moex_oi_yande
 
 ### Admin — таб АУДИОПЛЕЕР (admin.html + admin.js)
 
-**Секция 1 — ПЛЕЙЛИСТ (аналог ВИДЕОПЛЕЕР):**
-- Загрузка файлов с ПК → `/audio/` (max 50 MB)
-- Блок **по ссылке:** https URL потока → `parseAudioStreamUrl()` → запись `source: stream`, `streamUrl`
-- Список: чекбокс **ЭФИР** (`enabled`), поля название + исполнитель, бейдж FILE/URL, drag-сортировка, удаление
-- **СОХРАНИТЬ ПЛЕЙЛИСТ** → `audio-config.json`; вызывается `audioPlayer.reload()`
+**Секция 1 — ПЛЕЙЛИСТЫ:**
+- **Редактировать плейлист** / **На сайте играет** — два селекта; `migrateAudioConfigPlaylists()` + сохранение без `localTracks`
+- **+ Новый** / **Удалить** (если >1 плейлиста); поле **название** редактируемого плейлиста
+- Загрузка с ПК и URL добавляют треки в **текущий** редактируемый плейлист
+- Треки: ЭФИР, название, исполнитель, FILE/URL, drag, удаление
+- **СОХРАНИТЬ ПЛЕЙЛИСТ** → `audio-config.json`; `audioPlayer.reload()`
 
 **Секция 2 — ЯНДЕКС МУЗЫКА:**
 - Поле Client ID Яндекс OAuth приложения
@@ -213,6 +220,7 @@ OAuth-токен Яндекса хранится в `localStorage['moex_oi_yande
 | 2026-04-01 | a7152e1 | chore: `user-pages-github-io-root/robots.txt` — Sitemap на `/moex-oi-analyst/sitemap.xml` |
 | 2026-04-01 | 4df343a | feat: видеоплеер на главной (3D рамка 16:9), `video-config.json`, admin ВИДЕОПЛЕЕР |
 | 2026-04-01 | 5645ae8 | feat: аудио-плейлист как у видео — ЭФИР, URL-поток, `enabled`/`source` в `localTracks` |
+| 2026-04-01 | —       | feat: несколько именованных аудио-плейлистов, `activePlaylistId`, миграция с `localTracks` |
 
 ## Текущее состояние
 
@@ -224,8 +232,8 @@ OAuth-токен Яндекса хранится в `localStorage['moex_oi_yande
 - ✅ Топ-5 новостей MOEX с автообновлением
 - ✅ Автогенерация хештегов в admin-панели
 - ✅ **Мобильная оптимизация:** гамбургер-меню, responsive layout, Three.js mobile mode (30fps, 200 частиц, gyro)
-- ✅ **Аудиоплеер:** neon cyberpunk, FFT; плейлист LOCAL + **URL-поток**; только треки с **ЭФИР**; ЯНДЕКС (OAuth embed)
-- ✅ **Admin — АУДИОПЛЕЕР:** тот же UX что видео (ЭФИР, ссылка, порядок drag), плюс Яндекс
+- ✅ **Аудиоплеер:** neon cyberpunk, FFT; **несколько плейлистов** в конфиге, на сайте играет выбранный `activePlaylistId`; LOCAL + URL; ЭФИР; ЯНДЕКС
+- ✅ **Admin — АУДИОПЛЕЕР:** создание/удаление плейлистов, «на сайте играет», загрузки/URL в выбранный плейлист
 - ✅ **Видеоплеер:** hero справа, плейлист local + embed (YouTube/Vimeo/Rutube/VK и др.) + прямые URL; вкладка **ВИДЕОПЛЕЕР** в admin
 - ✅ **SEO pre-render:** `scripts/build-posts.js` генерирует `posts/<slug>/index.html` со всеми мета, JSON-LD; GitHub Actions автозапуск при каждом пуше в `posts/**`
 - ✅ **sitemap.xml:** обновлён на статические URL `posts/<slug>/`
