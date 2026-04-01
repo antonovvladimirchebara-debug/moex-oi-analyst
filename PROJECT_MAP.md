@@ -49,7 +49,7 @@ moex-oi-analyst/
 ├── audio/                — Аудиофайлы (MP3/WAV/OGG), загружаются через admin
 ├── audio-config.json     — Конфиг плеера: localTracks[], yandexPlaylists[], activeSource
 ├── sitemap.xml           — Авто-обновляется при каждом посте через admin.js
-├── user-pages-github-io-root/ — шаблон index.html для репо username.github.io (Яндекс, корень хоста)
+├── user-pages-github-io-root/ — шаблон index.html + robots.txt для репо username.github.io (Яндекс, корень хоста, Sitemap блога)
 ├── robots.txt            — Allow: /, Disallow: /admin.html
 ├── _config.yml           — GitHub Pages Jekyll config
 ├── README.md
@@ -179,6 +179,7 @@ OAuth-токен Яндекса хранится в `localStorage['moex_oi_yande
 | 2026-04-01 | 79d0865 | chore: метатег Яндекс Вебмастер `yandex-verification` (index, blog, post) |
 | 2026-04-01 | 61db118 | docs: шаблон `user-pages-github-io-root/` для подтверждения Яндекса на корне github.io |
 | 2026-04-01 | f4d81d6 | docs: ссылка на созданный репозиторий `antonovvladimirchebara-debug.github.io` |
+| 2026-04-01 | —       | chore: `user-pages-github-io-root/robots.txt` — Sitemap на `/moex-oi-analyst/sitemap.xml` |
 
 ## Текущее состояние
 

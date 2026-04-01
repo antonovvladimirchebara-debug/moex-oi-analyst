@@ -1,0 +1,5 @@
+# Корень GitHub Pages: карта сайта основного блога в подкаталоге /moex-oi-analyst/
+User-agent: *
+Allow: /
+
+Sitemap: https://antonovvladimirchebara-debug.github.io/moex-oi-analyst/sitemap.xml

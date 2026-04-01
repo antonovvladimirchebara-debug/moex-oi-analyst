@@ -2,7 +2,7 @@
 
 Сделай так:
 1. На GitHub создай НОВЫЙ публичный репозиторий с именем ровно: antonovvladimirchebara-debug.github.io
-2. Скопируй index.html из этой папки в корень того репозитория и закоммить в ветку main.
+2. Скопируй index.html и robots.txt из этой папки в корень того репозитория и закоммить в ветку main.
 3. В настройках репозитория включи GitHub Pages (ветка main, папка / root).
 4. Подожди 1–2 минуты, затем в Вебмастере нажми «Подтвердить» для сайта https://antonovvladimirchebara-debug.github.io
 
