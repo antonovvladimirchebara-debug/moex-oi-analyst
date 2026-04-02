@@ -2,37 +2,13 @@
   "playlists": [
     {
       "id": "ap-main",
-      "title": "Основной",
+      "title": "Relaxation",
       "tracks": [
         {
-          "id": "mneoo8ov",
-          "title": "audio_2026-03-31_18-57-42",
+          "id": "2026-04-02-ej0c2s",
+          "title": "Suduaya, Rapossa — Fibonacci (Original Mix) (www.lightaudio.ru)",
           "artist": "",
-          "filename": "audio_2026-03-31_18-57-42.ogg",
-          "source": "local",
-          "enabled": true
-        },
-        {
-          "id": "2026-04-01-sj1kbd",
-          "title": "Vasya_Oblomov_-_Mesto_gde_my_rosli_80123460",
-          "artist": "",
-          "filename": "vasya_oblomov_-_mesto_gde_my_rosli_80123460.mp3",
-          "source": "local",
-          "enabled": true
-        },
-        {
-          "id": "2026-04-01-aoln3r",
-          "title": "Vasya_Oblomov_-_Vremya_zhit_i_vremya_umirat_80204669",
-          "artist": "",
-          "filename": "vasya_oblomov_-_vremya_zhit_i_vremya_umirat_80204669.mp3",
-          "source": "local",
-          "enabled": true
-        },
-        {
-          "id": "2026-04-01-hakzrk",
-          "title": "ESTRADARADA_-_Noch_kosmonavtiki_Put_pobeditelya_73134922",
-          "artist": "",
-          "filename": "estradarada_-_noch_kosmonavtiki_put_pobeditelya_73134922.mp3",
+          "filename": "suduaya-rapossa-fibonacci-original-mix-www.lightaudio.ru.mp3",
           "source": "local",
           "enabled": true
         }
@@ -42,31 +18,5 @@
   "activePlaylistId": "ap-main",
   "yandexPlaylists": [],
   "yandexClientId": "",
-  "activeSource": "local",
-  "localTracks": [
-    {
-      "id": "2026-04-01-9z4i9m",
-      "title": "Vasya_Oblomov_-_Mesto_gde_my_rosli_80123460",
-      "artist": "",
-      "filename": "vasya_oblomov_-_mesto_gde_my_rosli_80123460.mp3",
-      "source": "local",
-      "enabled": true
-    },
-    {
-      "id": "2026-04-01-a5z5xp",
-      "title": "Vasya_Oblomov_-_Vremya_zhit_i_vremya_umirat_80204669",
-      "artist": "",
-      "filename": "vasya_oblomov_-_vremya_zhit_i_vremya_umirat_80204669.mp3",
-      "source": "local",
-      "enabled": true
-    },
-    {
-      "id": "2026-04-01-mv83az",
-      "title": "ESTRADARADA_-_Noch_kosmonavtiki_Put_pobeditelya_73134922",
-      "artist": "",
-      "filename": "estradarada_-_noch_kosmonavtiki_put_pobeditelya_73134922.mp3",
-      "source": "local",
-      "enabled": true
-    }
-  ]
+  "activeSource": "local"
 }
