@@ -13,6 +13,20 @@
           "enabled": true
         }
       ]
+    },
+    {
+      "id": "ap-2026-04-02-urkb3p",
+      "title": "Релакс",
+      "tracks": [
+        {
+          "id": "2026-04-02-e0qtkc",
+          "title": "SoundHelix Song 1",
+          "artist": "",
+          "source": "stream",
+          "streamUrl": "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3",
+          "enabled": true
+        }
+      ]
     }
   ],
   "activePlaylistId": "ap-main",
