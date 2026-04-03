@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SEO Booster — Аналитик MOEX/OI</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lucide-static@0.344.0/font/lucide.min.css">
+    <style>
+        body { background-color: #0a0a0b; color: #e5e7eb; font-family: sans-serif; }
+        .glass { background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.05); backdrop-filter: blur(10px); }
+        .btn-primary { background: #ffffff; color: #000000; font-weight: bold; transition: all 0.2s; }
+        .btn-primary:hover { background: #d1d5db; transform: translateY(-1px); }
+    </style>
+</head>
+<body class="min-h-screen p-4 md:p-8">
+    <div class="max-w-4xl mx-auto space-y-8">
+        <!-- Header -->
+        <div class="flex items-center justify-between border-b border-white/10 pb-6">
+            <div>
+                <h1 class="text-2xl font-bold tracking-tight">SEO Booster</h1>
+                <p class="text-sm text-gray-500">Инструменты продвижения для moex-oi-analyst</p>
+            </div>
+            <a href="index.html" class="text-sm text-blue-400 hover:underline">← На главную</a>
+        </div>
+
+        <!-- Pings -->
+        <section class="space-y-4">
+            <h2 class="text-xl font-bold flex items-center gap-2">
+                <i class="lucide-zap text-yellow-500"></i> Поисковые Пинги
+            </h2>
+            <p class="text-sm text-gray-400">Уведомите поисковики об обновлении контента (регистрация не нужна).</p>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <button onclick="ping('google')" class="glass p-6 rounded-2xl text-left hover:border-blue-500/30 transition-all group">
+                    <div class="flex justify-between items-start mb-4">
+                        <i class="lucide-search text-gray-500 group-hover:text-blue-400"></i>
+                        <span class="text-[10px] font-bold uppercase text-gray-600">Google</span>
+                    </div>
+                    <div class="font-bold">Google Ping</div>
+                    <div class="text-xs text-gray-500 mt-1">Отправить Sitemap в Google</div>
+                </button>
+                <button onclick="ping('bing')" class="glass p-6 rounded-2xl text-left hover:border-blue-500/30 transition-all group">
+                    <div class="flex justify-between items-start mb-4">
+                        <i class="lucide-search text-gray-500 group-hover:text-blue-400"></i>
+                        <span class="text-[10px] font-bold uppercase text-gray-600">Bing</span>
+                    </div>
+                    <div class="font-bold">Bing Ping</div>
+                    <div class="text-xs text-gray-500 mt-1">Отправить Sitemap в Bing/Yahoo</div>
+                </button>
+            </div>
+        </section>
+
+        <!-- Directories -->
+        <section class="space-y-4">
+            <h2 class="text-xl font-bold flex items-center gap-2">
+                <i class="lucide-layout text-blue-500"></i> Открытые каталоги
+            </h2>
+            <p class="text-sm text-gray-400">Добавьте сайт в базы данных без авторизации.</p>
+            <div class="space-y-3">
+                <div class="glass p-4 rounded-2xl flex items-center justify-between">
+                    <div>
+                        <div class="font-bold text-sm">Gigablast</div>
+                        <div class="text-xs text-gray-500">Open source поисковик</div>
+                    </div>
+                    <a href="https://www.gigablast.com/addurl" target="_blank" class="btn-primary px-4 py-2 rounded-xl text-xs">Добавить</a>
+                </div>
+                <div class="glass p-4 rounded-2xl flex items-center justify-between">
+                    <div>
+                        <div class="font-bold text-sm">EntireWeb</div>
+                        <div class="text-xs text-gray-500">Бесплатная подача в поиск</div>
+                    </div>
+                    <a href="https://www.entireweb.com/free_submission/" target="_blank" class="btn-primary px-4 py-2 rounded-xl text-xs">Добавить</a>
+                </div>
+                <div class="glass p-4 rounded-2xl flex items-center justify-between">
+                    <div>
+                        <div class="font-bold text-sm">SoMuch</div>
+                        <div class="text-xs text-gray-500">Общий каталог ссылок</div>
+                    </div>
+                    <a href="https://www.somuch.com/submit-links/" target="_blank" class="btn-primary px-4 py-2 rounded-xl text-xs">Добавить</a>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <script>
+        const SITE_URL = 'https://antonovvladimirchebara-debug.github.io/moex-oi-analyst/';
+        const SITEMAP = SITE_URL + 'sitemap.xml';
+
+        function ping(engine) {
+            let url = '';
+            if (engine === 'google') url = `https://www.google.com/ping?sitemap=${encodeURIComponent(SITEMAP)}`;
+            if (engine === 'bing') url = `https://www.bing.com/ping?sitemap=${encodeURIComponent(SITEMAP)}`;
+            window.open(url, '_blank');
+        }
+    </script>
+</body>
+</html>
