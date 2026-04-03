@@ -1,3 +1,12 @@
 {
-  "playlist": []
+  "playlist": [
+    {
+      "id": "2026-04-03-rm6yqk",
+      "title": "Идеального шорта",
+      "enabled": true,
+      "source": "embed",
+      "provider": "youtube",
+      "embedUrl": "https://www.youtube.com/embed/lImLapeMh9A"
+    }
+  ]
 }
