@@ -300,10 +300,10 @@
 /* ── Sidebar floating widget ────────────────── */
 .vp-sidebar-wrap {
   position: fixed;
-  bottom: 20px;
+  top: calc(var(--nav-height, 70px) + 420px);
   right: 14px;
   z-index: 9998;
-  width: 400px;
+  width: 290px;
   pointer-events: auto;
 }
 
