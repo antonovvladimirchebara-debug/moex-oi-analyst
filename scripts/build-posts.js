@@ -373,6 +373,8 @@ ${bodyHtml}
     </section>
   </main>
 
+  <div id="sidebar-video-mount" class="vp-sidebar-wrap" data-video-root></div>
+
   <footer class="site-footer" role="contentinfo">
     <div class="footer-inner">
       <div class="footer-brand">
@@ -388,8 +390,6 @@ ${bodyHtml}
       <p class="footer-copy">© 2026 ${AUTHOR}. Московская биржа MOEX/OI Аналитика.</p>
     </div>
   </footer>
-
-  <div id="post-video-mount" class="post-video-widget" data-video-root></div>
 
   <script type="importmap">
   {

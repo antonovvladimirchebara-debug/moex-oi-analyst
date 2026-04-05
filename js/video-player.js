@@ -227,17 +227,17 @@
     updateChrome();
   }
 
-  function setupMouseTilt() {
+  function setupTilt3D() {
     const root = mountEl.querySelector('.vp-root');
     const tilt = mountEl.querySelector('.vp-3d-tilt');
     if (!root || !tilt) return;
 
     root.addEventListener('mousemove', (e) => {
       const rect = root.getBoundingClientRect();
-      const x = (e.clientX - rect.left) / rect.width - 0.5;
-      const y = (e.clientY - rect.top) / rect.height - 0.5;
-      const rotY = x * 18;
-      const rotX = -y * 10;
+      const x = (e.clientX - rect.left) / rect.width;
+      const y = (e.clientY - rect.top) / rect.height;
+      const rotY = (x - 0.5) * 20;
+      const rotX = (0.5 - y) * 12;
       tilt.style.transform = `rotateY(${rotY}deg) rotateX(${rotX}deg)`;
     });
 
@@ -248,11 +248,11 @@
 
   function init() {
     mountEl = document.getElementById('hero-video-mount')
-           || document.getElementById('post-video-mount');
+           || document.getElementById('sidebar-video-mount');
     if (!mountEl) return;
 
     buildShell();
-    setupMouseTilt();
+    setupTilt3D();
     loadConfig();
   }
 
