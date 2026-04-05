@@ -452,7 +452,7 @@ async function updateSitemap(posts) {
   const today = formatDateISO();
   const postUrls = posts.map(p => `
   <url>
-    <loc>${base}/post.html?id=${p.id}</loc>
+    <loc>${base}/posts/${p.id}/</loc>
     <lastmod>${p.date}</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>

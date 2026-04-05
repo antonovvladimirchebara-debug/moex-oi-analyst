@@ -181,7 +181,7 @@ function formatDate(iso) {
 function buildPostHtml(post, postData, allPosts) {
   const slug      = post.id;
   const title     = escHtml(postData.title || post.title);
-  const desc      = escHtml(postData.excerpt || post.excerpt || '');
+  const desc      = escHtml((postData.excerpt || post.excerpt || '').replace(/\n+/g, ' ').trim());
   const date      = postData.date || post.date;
   const tags      = postData.tags || post.tags || [];
   const content   = postData.content || '';

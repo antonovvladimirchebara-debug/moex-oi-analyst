@@ -221,6 +221,7 @@ OAuth-токен Яндекса хранится в `localStorage['moex_oi_yande
 | 2026-04-01 | 4df343a | feat: видеоплеер на главной (3D рамка 16:9), `video-config.json`, admin ВИДЕОПЛЕЕР |
 | 2026-04-01 | 5645ae8 | feat: аудио-плейлист как у видео — ЭФИР, URL-поток, `enabled`/`source` в `localTracks` |
 | 2026-04-01 | 677cf94 | feat: несколько именованных аудио-плейлистов, `activePlaylistId`, миграция с `localTracks` |
+| 2026-04-05 | — | fix: критические SEO-ошибки — незакрытый HTML-комментарий blog.html, рассинхрон URL sitemap, English мета на ru-сайте |
 
 ## Текущее состояние
 
@@ -238,8 +239,13 @@ OAuth-токен Яндекса хранится в `localStorage['moex_oi_yande
 - ✅ **SEO pre-render:** `scripts/build-posts.js` генерирует `posts/<slug>/index.html` со всеми мета, JSON-LD; GitHub Actions автозапуск при каждом пуше в `posts/**`
 - ✅ **sitemap.xml:** обновлён на статические URL `posts/<slug>/`
 - ✅ **index.html:** секция #methodology (~900 слов), расширенный блок автора с методологией и контактами
-- ⚠️ **Giscus комментарии:** нужно настроить `data-repo-id` и `data-category-id` через https://giscus.app → обновить `js/blog.js` функция `loadGiscus()`
-- ⚠️ **OG-image:** файл `og-image.png` (1200×630px) не создан — нет превью при шеринге
+- ✅ **Giscus комментарии:** repo-id и category-id настроены в `blog.js` и `build-posts.js`
+- ✅ **OG-image:** файл `og-image.png` создан и подключён на всех страницах
+- ✅ **SEO fix (2026-04-05):** закрыт незакрытый HTML-комментарий в blog.html, добавлены favicon/fonts/Twitter Cards/video-player.css
+- ✅ **SEO fix (2026-04-05):** мета-описания index.html переведены на русский (description, OG, Twitter, JSON-LD)
+- ✅ **SEO fix (2026-04-05):** sitemap.xml и admin.js синхронизированы на формат `posts/<slug>/` (чистые URL)
+- ✅ **SEO fix (2026-04-05):** теги добавлены ко всем постам; build-posts.js исправлен (очистка \n в excerpt для мета-тегов)
+- ✅ **SEO fix (2026-04-05):** статические HTML сгенерированы для всех 5 постов
 - **Audio player:** для Яндекс Музыки нужно зарегистрировать приложение на oauth.yandex.ru → Веб-сервис → Callback URI = URL admin.html
 
 ## Важные замечания
