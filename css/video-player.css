@@ -299,11 +299,13 @@
 
 /* ── Sidebar floating widget ────────────────── */
 .vp-sidebar-wrap {
-  position: fixed;
-  top: calc(var(--nav-height, 70px) + 50px);
-  right: 14px;
-  z-index: 9998;
-  width: 290px;
+  position: fixed !important;
+  top: 180px !important;
+  right: 20px !important;
+  left: auto !important;
+  bottom: auto !important;
+  z-index: 9998 !important;
+  width: 320px;
   pointer-events: auto;
 }
 
