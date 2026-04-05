@@ -274,6 +274,26 @@
     updateChrome();
   }
 
+  function trackAudioPlayer() {
+    const apWrap = document.querySelector('.ap-wrap');
+    if (!apWrap) {
+      mountEl.style.top = '90px';
+      return;
+    }
+
+    function reposition() {
+      const rect = apWrap.getBoundingClientRect();
+      const gap = 12;
+      mountEl.style.top = Math.round(rect.bottom + gap) + 'px';
+    }
+
+    reposition();
+    const observer = new MutationObserver(reposition);
+    observer.observe(apWrap, { attributes: true, childList: true, subtree: true, attributeFilter: ['class', 'style'] });
+    window.addEventListener('resize', reposition);
+    setInterval(reposition, 1000);
+  }
+
   function setupTilt3D() {
     const root = mountEl.querySelector('.vp-root');
     const tilt = mountEl.querySelector('.vp-3d-tilt');
@@ -299,6 +319,7 @@
 
     buildShell();
     setupTilt3D();
+    trackAudioPlayer();
     loadConfig();
   }
 

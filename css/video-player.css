@@ -300,7 +300,7 @@
 /* ── Sidebar floating widget ────────────────── */
 .vp-sidebar-wrap {
   position: fixed !important;
-  top: 420px !important;
+  top: 90px;
   right: 20px !important;
   left: auto !important;
   bottom: auto !important;
