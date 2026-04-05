@@ -43,6 +43,8 @@
     return state.config.playlist[i];
   }
 
+  let metaTitleEl, metaRowEl;
+
   function buildShell() {
     mountEl.innerHTML = `
       <div class="vp-root" role="region" aria-label="Видеоплеер">
@@ -66,6 +68,10 @@
             </div>
           </div>
         </div>
+        <div class="vp-meta">
+          <div class="vp-meta-title" id="vp-meta-title"></div>
+          <div class="vp-meta-row" id="vp-meta-row"></div>
+        </div>
         <div class="vp-toolbar">
           <button type="button" class="vp-btn" id="vp-prev" aria-label="Предыдущее видео">⏮</button>
           <button type="button" class="vp-btn" id="vp-next" aria-label="Следующее видео">⏭</button>
@@ -78,9 +84,34 @@
     stageEl = document.getElementById('vp-stage');
     titleEl = document.getElementById('vp-title');
     countEl = document.getElementById('vp-count');
+    metaTitleEl = document.getElementById('vp-meta-title');
+    metaRowEl = document.getElementById('vp-meta-row');
 
     document.getElementById('vp-prev').addEventListener('click', () => step(-1));
     document.getElementById('vp-next').addEventListener('click', () => step(1));
+  }
+
+  function formatViews(n) {
+    if (!n && n !== 0) return '';
+    if (n >= 1000000) return (n / 1000000).toFixed(1).replace(/\.0$/, '') + ' млн просмотров';
+    if (n >= 1000) return (n / 1000).toFixed(1).replace(/\.0$/, '') + ' тыс. просмотров';
+    return n + ' просмотров';
+  }
+
+  function timeAgo(dateStr) {
+    if (!dateStr) return '';
+    const diff = Date.now() - new Date(dateStr).getTime();
+    const mins = Math.floor(diff / 60000);
+    if (mins < 60) return mins + ' мин. назад';
+    const hrs = Math.floor(mins / 60);
+    if (hrs < 24) return hrs + ' ч. назад';
+    const days = Math.floor(hrs / 24);
+    if (days < 7) return days + ' дн. назад';
+    const weeks = Math.floor(days / 7);
+    if (weeks < 5) return weeks + ' нед. назад';
+    const months = Math.floor(days / 30);
+    if (months < 12) return months + ' мес. назад';
+    return Math.floor(days / 365) + ' г. назад';
   }
 
   function clearStage() {
@@ -169,6 +200,22 @@
       titleEl.classList.toggle('scrolling', t.length > 28);
     }
 
+    if (metaTitleEl) {
+      metaTitleEl.textContent = item ? (item.title || '') : '';
+    }
+    if (metaRowEl && item) {
+      const parts = [];
+      const prov = item.provider || item.source || '';
+      if (prov) parts.push(`<span class="vp-meta-provider">${escapeHtml(prov.toUpperCase())}</span>`);
+      const views = formatViews(item.views);
+      if (views) parts.push(views);
+      const ago = timeAgo(item.publishedAt || item.date);
+      if (ago) parts.push(ago);
+      metaRowEl.innerHTML = parts.join('<span class="vp-meta-dot">·</span>');
+    } else if (metaRowEl) {
+      metaRowEl.innerHTML = '';
+    }
+
     const prev = document.getElementById('vp-prev');
     const next = document.getElementById('vp-next');
     if (prev) prev.disabled = n <= 1;
@@ -247,8 +294,7 @@
   }
 
   function init() {
-    mountEl = document.getElementById('hero-video-mount')
-           || document.getElementById('sidebar-video-mount');
+    mountEl = document.getElementById('sidebar-video-mount');
     if (!mountEl) return;
 
     buildShell();
