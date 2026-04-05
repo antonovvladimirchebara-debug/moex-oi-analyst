@@ -357,13 +357,27 @@ async function publishPost() {
   if (!title) { showStatus('Введи заголовок поста!', 'error'); return; }
   if (!content) { showStatus('Введи содержание поста!', 'error'); return; }
 
+  let finalTagsRaw = tagsRaw;
+  if (!finalTagsRaw) {
+    const auto = generateTagsFromText(`${title} ${content}`);
+    if (auto.length) {
+      tagsEl.value = auto.join(', ');
+      finalTagsRaw = tagsEl.value;
+      renderTagSuggestions(auto);
+      showStatus(`Автоподбор: добавлено ${auto.length} тегов. Проверь и нажми "Опубликовать" ещё раз.`, 'info');
+      return;
+    }
+    showStatus('Не удалось подобрать теги автоматически. Добавь хотя бы один тег вручную!', 'error');
+    return;
+  }
+
   const btn = document.getElementById('publish-btn');
   const isEditing = !!editMode;
   btn.disabled = true;
   btn.textContent = isEditing ? 'СОХРАНЕНИЕ...' : 'ПУБЛИКАЦИЯ...';
 
   try {
-    const tags    = tagsRaw ? tagsRaw.split(',').map(t => t.trim()).filter(Boolean) : [];
+    const tags    = finalTagsRaw.split(',').map(t => t.trim()).filter(Boolean);
     const date    = isEditing ? editMode.originalDate : formatDateISO();
     const slugVal = slugEl?.value.trim() || slugify(title);
     const id      = isEditing ? editMode.id : `${date}-${slugVal}`;
