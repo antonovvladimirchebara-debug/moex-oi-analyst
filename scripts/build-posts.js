@@ -268,6 +268,7 @@ ${jsonLd}
   <link rel="stylesheet" href="../../css/style.css">
   <link rel="stylesheet" href="../../css/animations.css">
   <link rel="stylesheet" href="../../css/audio-player.css">
+  <link rel="stylesheet" href="../../css/video-player.css">
   <link rel="icon" type="image/x-icon" href="../../favicon.ico">
   <link rel="icon" type="image/png" sizes="32x32" href="../../favicon-32.png">
   <link rel="icon" type="image/png" sizes="16x16" href="../../favicon-16.png">
@@ -388,6 +389,8 @@ ${bodyHtml}
     </div>
   </footer>
 
+  <div id="post-video-mount" class="post-video-widget" data-video-root></div>
+
   <script type="importmap">
   {
     "imports": {
@@ -399,6 +402,7 @@ ${bodyHtml}
   <script type="module" src="../../js/three-scene.js"></script>
   <script src="../../js/blog.js" defer></script>
   <script src="../../js/audio-player.js" defer></script>
+  <script src="../../js/video-player.js" defer></script>
 
   <!-- Giscus comments -->
   <script>

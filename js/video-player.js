@@ -227,11 +227,32 @@
     updateChrome();
   }
 
+  function setupMouseTilt() {
+    const root = mountEl.querySelector('.vp-root');
+    const tilt = mountEl.querySelector('.vp-3d-tilt');
+    if (!root || !tilt) return;
+
+    root.addEventListener('mousemove', (e) => {
+      const rect = root.getBoundingClientRect();
+      const x = (e.clientX - rect.left) / rect.width - 0.5;
+      const y = (e.clientY - rect.top) / rect.height - 0.5;
+      const rotY = x * 18;
+      const rotX = -y * 10;
+      tilt.style.transform = `rotateY(${rotY}deg) rotateX(${rotX}deg)`;
+    });
+
+    root.addEventListener('mouseleave', () => {
+      tilt.style.transform = '';
+    });
+  }
+
   function init() {
-    mountEl = document.getElementById('hero-video-mount');
+    mountEl = document.getElementById('hero-video-mount')
+           || document.getElementById('post-video-mount');
     if (!mountEl) return;
 
     buildShell();
+    setupMouseTilt();
     loadConfig();
   }
 
