@@ -269,10 +269,11 @@ ${jsonLd}
   <link rel="stylesheet" href="../../css/animations.css">
   <link rel="stylesheet" href="../../css/audio-player.css">
   <link rel="stylesheet" href="../../css/video-player.css?v=2">
-  <link rel="icon" type="image/x-icon" href="../../favicon.ico">
-  <link rel="icon" type="image/png" sizes="32x32" href="../../favicon-32.png">
-  <link rel="icon" type="image/png" sizes="16x16" href="../../favicon-16.png">
-  <link rel="apple-touch-icon" sizes="180x180" href="../../apple-touch-icon.png">
+  <link rel="icon" type="image/x-icon" href="${BASE_URL}/favicon.ico">
+  <link rel="icon" type="image/png" sizes="32x32" href="${BASE_URL}/favicon-32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="${BASE_URL}/favicon-16.png">
+  <link rel="icon" type="image/png" sizes="192x192" href="${BASE_URL}/favicon-192.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="${BASE_URL}/apple-touch-icon.png">
   <meta name="theme-color" content="#0a0a1a">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
