@@ -1,19 +1,26 @@
 {
-  "playlist": [
+  "playlists": [
     {
-      "id": "2026-04-07-wqkrh2",
-      "title": "Битва_за_79750",
-      "enabled": true,
-      "source": "local",
-      "filename": "bitva_za_79750.mp4"
-    },
-    {
-      "id": "2026-04-08-bq4fo8",
-      "title": "Идеального шорта",
-      "enabled": true,
-      "source": "embed",
-      "provider": "youtube",
-      "embedUrl": "https://www.youtube.com/embed/TiA3e57uTLE"
+      "id": "vp-main",
+      "title": "Основной",
+      "tracks": [
+        {
+          "id": "2026-04-07-wqkrh2",
+          "title": "Битва_за_79750",
+          "enabled": true,
+          "source": "local",
+          "filename": "bitva_za_79750.mp4"
+        },
+        {
+          "id": "2026-04-08-bq4fo8",
+          "title": "Идеального шорта",
+          "enabled": true,
+          "source": "embed",
+          "provider": "youtube",
+          "embedUrl": "https://www.youtube.com/embed/TiA3e57uTLE"
+        }
+      ]
     }
-  ]
+  ],
+  "activePlaylistId": "vp-main"
 }

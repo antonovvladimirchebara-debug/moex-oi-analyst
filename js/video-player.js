@@ -9,8 +9,8 @@
   const GH_TOKEN_KEY = 'moex_oi_gh_token';
 
   const state = {
-    config: { playlist: [] },
-    /** indices into config.playlist for enabled items only */
+    config: { playlists: [], activePlaylistId: null },
+    playlist: [],
     activeMap: [],
     currentPos: 0,
   };
@@ -29,10 +29,19 @@
       .replace(/"/g, '&quot;');
   }
 
+  function resolveActivePlaylist(cfg) {
+    if (Array.isArray(cfg.playlists) && cfg.playlists.length > 0) {
+      const active = cfg.playlists.find(p => p.id === cfg.activePlaylistId) || cfg.playlists[0];
+      return active.tracks || [];
+    }
+    if (Array.isArray(cfg.playlist)) return cfg.playlist;
+    return [];
+  }
+
   function buildActiveMap() {
-    const pl = state.config.playlist || [];
+    state.playlist = resolveActivePlaylist(state.config);
     state.activeMap = [];
-    pl.forEach((item, idx) => {
+    state.playlist.forEach((item, idx) => {
       if (item && item.enabled !== false) state.activeMap.push(idx);
     });
   }
@@ -40,7 +49,7 @@
   function getActiveItem() {
     const i = state.activeMap[state.currentPos];
     if (i === undefined) return null;
-    return state.config.playlist[i];
+    return state.playlist[i];
   }
 
   let metaTitleEl, metaRowEl;
@@ -229,7 +238,7 @@
     }
     plEl.innerHTML = state.activeMap
       .map((cfgIdx, pos) => {
-        const it = state.config.playlist[cfgIdx];
+        const it = state.playlist[cfgIdx];
         const typeLabel =
           it.source === 'local' ? 'LOC' : it.source === 'stream' ? 'URL' : (it.provider || 'WEB').slice(0, 4).toUpperCase();
         const active = pos === state.currentPos ? ' active' : '';
@@ -264,8 +273,6 @@
       const r = await fetch(CONFIG_URL + '?t=' + Date.now());
       if (r.ok) state.config = await r.json();
     } catch (_) {}
-
-    if (!state.config.playlist) state.config.playlist = [];
 
     buildActiveMap();
     if (state.currentPos >= state.activeMap.length) state.currentPos = 0;

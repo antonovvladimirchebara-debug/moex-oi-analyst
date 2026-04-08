@@ -1781,8 +1781,9 @@ function setYandexSaveStatus(msg, type) {
 const VIDEO_CONFIG_PATH = 'video-config.json';
 const VIDEO_DIR = 'video/';
 
-let videoConfig = { playlist: [] };
+let videoConfig = { playlists: [], activePlaylistId: null };
 let videoConfigSha = null;
+let videoEditPlaylistId = null;
 let _videoTabSetupDone = false;
 
 /**
@@ -1897,6 +1898,114 @@ function parseVideoUrl(raw) {
   return null;
 }
 
+function migrateVideoConfigPlaylists(cfg) {
+  const hasPl = Array.isArray(cfg.playlists) && cfg.playlists.length > 0;
+  if (!hasPl) {
+    const old = Array.isArray(cfg.playlist) ? cfg.playlist.slice() : [];
+    const nid = 'vp-' + genId();
+    cfg.playlists = [{ id: nid, title: 'Основной', tracks: old }];
+    cfg.activePlaylistId = nid;
+  }
+  cfg.playlists.forEach(pl => {
+    if (!pl.id) pl.id = 'vp-' + genId();
+    if (!pl.title) pl.title = 'Плейлист';
+    if (!Array.isArray(pl.tracks)) pl.tracks = [];
+  });
+  if (!cfg.activePlaylistId || !cfg.playlists.some(p => p.id === cfg.activePlaylistId)) {
+    cfg.activePlaylistId = cfg.playlists[0].id;
+  }
+  delete cfg.playlist;
+}
+
+function getVideoEditPlaylist() {
+  migrateVideoConfigPlaylists(videoConfig);
+  if (!videoEditPlaylistId || !videoConfig.playlists.some(p => p.id === videoEditPlaylistId)) {
+    videoEditPlaylistId = videoConfig.activePlaylistId || videoConfig.playlists[0].id;
+  }
+  return videoConfig.playlists.find(p => p.id === videoEditPlaylistId) || videoConfig.playlists[0];
+}
+
+function getVideoEditTracks() {
+  const pl = getVideoEditPlaylist();
+  return pl && Array.isArray(pl.tracks) ? pl.tracks : [];
+}
+
+function renderVideoPlaylistControls() {
+  migrateVideoConfigPlaylists(videoConfig);
+  const editSel = document.getElementById('video-edit-playlist-select');
+  const siteSel = document.getElementById('video-site-playlist-select');
+  const rename = document.getElementById('video-playlist-rename-input');
+  const delBtn = document.getElementById('video-playlist-del-btn');
+  if (!editSel || !siteSel) return;
+
+  const optHtml = p =>
+    `<option value="${escapeAdminHtml(p.id)}">${escapeAdminHtml(p.title)} (${(p.tracks || []).length})</option>`;
+  const optHtmlSite = p =>
+    `<option value="${escapeAdminHtml(p.id)}">${escapeAdminHtml(p.title)}</option>`;
+
+  editSel.innerHTML = videoConfig.playlists.map(optHtml).join('');
+  siteSel.innerHTML = videoConfig.playlists.map(optHtmlSite).join('');
+
+  if (!videoEditPlaylistId || !videoConfig.playlists.some(p => p.id === videoEditPlaylistId)) {
+    videoEditPlaylistId = videoConfig.activePlaylistId || videoConfig.playlists[0].id;
+  }
+  editSel.value = videoEditPlaylistId;
+  siteSel.value = videoConfig.activePlaylistId || videoConfig.playlists[0].id;
+
+  const cur = getVideoEditPlaylist();
+  if (rename && cur) rename.value = cur.title;
+
+  if (delBtn) delBtn.disabled = videoConfig.playlists.length <= 1;
+}
+
+let _videoPlControlsBound = false;
+function setupVideoPlaylistControls() {
+  if (_videoPlControlsBound) return;
+  _videoPlControlsBound = true;
+
+  document.getElementById('video-edit-playlist-select')?.addEventListener('change', e => {
+    videoEditPlaylistId = e.target.value;
+    renderVideoPlaylistControls();
+    renderVideoPlaylist();
+  });
+
+  document.getElementById('video-site-playlist-select')?.addEventListener('change', e => {
+    videoConfig.activePlaylistId = e.target.value;
+    renderVideoPlaylistControls();
+  });
+
+  document.getElementById('video-playlist-new-btn')?.addEventListener('click', () => {
+    migrateVideoConfigPlaylists(videoConfig);
+    const nid = 'vp-' + genId();
+    videoConfig.playlists.push({ id: nid, title: 'Новый плейлист', tracks: [] });
+    videoEditPlaylistId = nid;
+    renderVideoPlaylistControls();
+    renderVideoPlaylist();
+  });
+
+  document.getElementById('video-playlist-del-btn')?.addEventListener('click', () => {
+    migrateVideoConfigPlaylists(videoConfig);
+    if (videoConfig.playlists.length <= 1) return;
+    const idx = videoConfig.playlists.findIndex(p => p.id === videoEditPlaylistId);
+    if (idx < 0) return;
+    videoConfig.playlists.splice(idx, 1);
+    if (videoConfig.activePlaylistId === videoEditPlaylistId) {
+      videoConfig.activePlaylistId = videoConfig.playlists[0].id;
+    }
+    videoEditPlaylistId = videoConfig.playlists[0].id;
+    renderVideoPlaylistControls();
+    renderVideoPlaylist();
+  });
+
+  document.getElementById('video-playlist-rename-input')?.addEventListener('change', e => {
+    const pl = getVideoEditPlaylist();
+    if (pl) {
+      pl.title = (e.target.value || '').trim() || 'Плейлист';
+      renderVideoPlaylistControls();
+    }
+  });
+}
+
 async function loadVideoConfig() {
   if (!currentToken) return;
   try {
@@ -1912,12 +2021,36 @@ async function loadVideoConfig() {
   } catch (_) {
     videoConfigSha = null;
   }
-  if (!videoConfig.playlist) videoConfig.playlist = [];
+  migrateVideoConfigPlaylists(videoConfig);
+  normalizeVideoPlaylistTracks();
+  if (!videoEditPlaylistId || !videoConfig.playlists.some(p => p.id === videoEditPlaylistId)) {
+    videoEditPlaylistId = videoConfig.activePlaylistId || videoConfig.playlists[0]?.id || null;
+  }
+  renderVideoPlaylistControls();
   renderVideoPlaylist();
 }
 
+function normalizeVideoPlaylistTracks() {
+  migrateVideoConfigPlaylists(videoConfig);
+  videoConfig.playlists.forEach(pl => {
+    (pl.tracks || []).forEach(t => {
+      if (!t) return;
+      if (t.enabled === undefined) t.enabled = true;
+      if (!t.source) {
+        if (t.embedUrl) t.source = 'embed';
+        else if (t.streamUrl && !t.filename) t.source = 'stream';
+        else t.source = 'local';
+      }
+    });
+  });
+}
+
 async function saveVideoConfig(config) {
-  const content = toBase64(JSON.stringify(config, null, 2));
+  const scrubbed = JSON.parse(JSON.stringify(config));
+  migrateVideoConfigPlaylists(scrubbed);
+  delete scrubbed.playlist;
+
+  const content = toBase64(JSON.stringify(scrubbed, null, 2));
   const body = {
     message: 'feat: update video player config',
     content,
@@ -1938,7 +2071,7 @@ async function saveVideoConfig(config) {
   }
   const data = await r.json();
   videoConfigSha = data.content.sha;
-  videoConfig = config;
+  videoConfig = scrubbed;
   return data;
 }
 
@@ -1986,7 +2119,7 @@ function renderVideoPlaylist() {
   const list = document.getElementById('video-track-list');
   if (!list) return;
 
-  const tracks = videoConfig.playlist || [];
+  const tracks = getVideoEditTracks();
   if (tracks.length === 0) {
     list.innerHTML =
       '<div style="font-family:var(--font-mono);font-size:0.62rem;color:var(--text-muted);text-align:center;padding:1rem;letter-spacing:1px;">ПЛЕЙЛИСТ ПУСТ — ЗАГРУЗИ ФАЙЛ ИЛИ ДОБАВЬ ССЫЛКУ</div>';
@@ -2032,22 +2165,24 @@ function renderVideoPlaylist() {
   list.querySelectorAll('.video-enabled-cb').forEach(cb => {
     cb.addEventListener('change', () => {
       const idx = parseInt(cb.dataset.index, 10);
-      if (!videoConfig.playlist[idx]) return;
-      videoConfig.playlist[idx].enabled = cb.checked;
+      const t = getVideoEditTracks();
+      if (t[idx]) t[idx].enabled = cb.checked;
     });
   });
 
   list.querySelectorAll('.video-title-input').forEach(inp => {
     inp.addEventListener('change', () => {
       const idx = parseInt(inp.dataset.index, 10);
-      if (videoConfig.playlist[idx]) videoConfig.playlist[idx].title = inp.value.trim();
+      const t = getVideoEditTracks();
+      if (t[idx]) t[idx].title = inp.value.trim();
     });
   });
 
   list.querySelectorAll('.video-track-del').forEach(btn => {
     btn.addEventListener('click', () => {
       const idx = parseInt(btn.dataset.index, 10);
-      videoConfig.playlist.splice(idx, 1);
+      const t = getVideoEditTracks();
+      t.splice(idx, 1);
       renderVideoPlaylist();
     });
   });
@@ -2065,12 +2200,13 @@ function setupVideoDragSort(container, selector) {
     item.addEventListener('dragend', () => {
       item.classList.remove('dragging');
       dragging = null;
+      const tracks = getVideoEditTracks();
       const newOrder = [];
       container.querySelectorAll(selector).forEach(el => {
         const idx = parseInt(el.dataset.index, 10);
-        if (!isNaN(idx) && videoConfig.playlist[idx]) newOrder.push(videoConfig.playlist[idx]);
+        if (!isNaN(idx) && tracks[idx]) newOrder.push(tracks[idx]);
       });
-      videoConfig.playlist = newOrder;
+      getVideoEditPlaylist().tracks = newOrder;
       renderVideoPlaylist();
     });
     item.addEventListener('dragover', e => {
@@ -2127,7 +2263,7 @@ async function handleVideoFiles(files) {
       const filename = await uploadVideoFile(file);
       item.remove();
       const baseTitle = file.name.replace(/\.[^.]+$/, '');
-      videoConfig.playlist.push({
+      getVideoEditTracks().push({
         id: genId(),
         title: baseTitle,
         enabled: true,
@@ -2155,7 +2291,7 @@ function setupVideoSave() {
       status.className = 'audio-save-status loading';
     }
     try {
-      await saveVideoConfig({ ...videoConfig, playlist: [...videoConfig.playlist] });
+      await saveVideoConfig({ ...videoConfig });
       if (status) {
         status.textContent = '✓ СОХРАНЕНО';
         status.className = 'audio-save-status success';
@@ -2196,7 +2332,7 @@ function setupVideoUrlButton() {
       entry.provider = parsed.provider || 'iframe';
       entry.embedUrl = parsed.embedUrl;
     }
-    videoConfig.playlist.push(entry);
+    getVideoEditTracks().push(entry);
     if (urlInp) urlInp.value = '';
     if (titleInp) titleInp.value = '';
     renderVideoPlaylist();
@@ -2211,6 +2347,7 @@ function initVideoTab() {
     setupVideoUpload();
     setupVideoSave();
     setupVideoUrlButton();
+    setupVideoPlaylistControls();
   }
 }
 
