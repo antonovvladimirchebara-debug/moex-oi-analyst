@@ -293,6 +293,7 @@ ${jsonLd}
       <ul class="nav-links" role="list">
         <li><a href="../../index.html" class="nav-link">ГЛАВНАЯ</a></li>
         <li><a href="../../blog.html" class="nav-link">БЛОГ</a></li>
+        <li><a href="../../reviews.html" class="nav-link">ОБЗОРЫ</a></li>
         <li><a href="../../index.html#about" class="nav-link">ОБО МНЕ</a></li>
       </ul>
       <button class="nav-burger" id="nav-burger" aria-label="Открыть меню" aria-expanded="false" aria-controls="mobile-menu">
@@ -304,6 +305,7 @@ ${jsonLd}
     <nav class="mobile-menu-links">
       <a href="../../index.html" class="mobile-link">ГЛАВНАЯ</a>
       <a href="../../blog.html" class="mobile-link">БЛОГ</a>
+      <a href="../../reviews.html" class="mobile-link">ОБЗОРЫ</a>
       <a href="../../index.html#about" class="mobile-link">ОБО МНЕ</a>
     </nav>
   </div>
@@ -386,6 +388,7 @@ ${bodyHtml}
       <div class="footer-links">
         <a href="../../index.html">Главная</a>
         <a href="../../blog.html">Блог</a>
+        <a href="../../reviews.html">Обзоры</a>
         <a href="https://github.com/${REPO}" target="_blank" rel="noopener noreferrer">GitHub</a>
       </div>
       <p class="footer-copy">© 2026 ${AUTHOR}. Московская биржа MOEX/OI Аналитика.</p>

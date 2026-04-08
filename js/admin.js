@@ -2129,6 +2129,7 @@ function renderVideoPlaylist() {
   list.innerHTML = tracks
     .map((tr, i) => {
       const on = tr.enabled !== false;
+      const onReview = tr.showOnReviews !== false;
       let meta = '';
       let badge = '';
       if (tr.source === 'local') {
@@ -2146,6 +2147,10 @@ function renderVideoPlaylist() {
       <label class="video-on-label" title="Показывать на главной">
         <input type="checkbox" class="video-enabled-cb" data-index="${i}" ${on ? 'checked' : ''}>
         <span>ЭФИР</span>
+      </label>
+      <label class="video-on-label" title="На страницу обзоров" style="color:var(--neon-cyan,#0ff);">
+        <input type="checkbox" class="video-review-cb" data-index="${i}" ${onReview ? 'checked' : ''}>
+        <span>ОБЗОР</span>
       </label>
       <span class="audio-track-drag" title="Перетащить">⠿</span>
       <div class="audio-track-info-text" style="flex:1;min-width:0;">
@@ -2167,6 +2172,14 @@ function renderVideoPlaylist() {
       const idx = parseInt(cb.dataset.index, 10);
       const t = getVideoEditTracks();
       if (t[idx]) t[idx].enabled = cb.checked;
+    });
+  });
+
+  list.querySelectorAll('.video-review-cb').forEach(cb => {
+    cb.addEventListener('change', () => {
+      const idx = parseInt(cb.dataset.index, 10);
+      const t = getVideoEditTracks();
+      if (t[idx]) t[idx].showOnReviews = cb.checked;
     });
   });
 

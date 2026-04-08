@@ -1,35 +1,38 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="ru" prefix="og: https://ogp.me/ns#">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <!-- Dynamic meta — filled by JS -->
-  <title id="page-title">Пост — Аналитик MOEX/OI</title>
-  <meta name="description" id="page-desc" content="Авторский анализ рынка MOEX/OI">
+  <title>Обзоры — Аналитик MOEX/OI | Видеообзоры рынка акций и фьючерсов</title>
+  <meta name="description" content="Видеообзоры рынка от аналитика MOEX/OI. Разборы фьючерсов, открытого интереса, движений крупных игроков — в формате видео.">
+  <meta name="keywords" content="видеообзоры MOEX, обзоры рынка, фьючерсы видео, открытый интерес OI видео, аналитика MOEX видео">
   <meta name="robots" content="index, follow">
-  <link rel="canonical" id="page-canonical" href="https://antonovvladimirchebara-debug.github.io/moex-oi-analyst/post.html">
+  <link rel="canonical" href="https://antonovvladimirchebara-debug.github.io/moex-oi-analyst/reviews.html">
 
   <!-- Search Engine Verification -->
   <meta name="google-site-verification" content="5_4U5RMkXB__7WyDv0RnH-2ybYxSglB0___NtMLeO4E">
   <meta name="yandex-verification" content="c90fd8b03526723b">
 
-  <!-- OG dynamic -->
-  <meta property="og:type" content="article">
-  <meta property="og:url" id="og-url" content="">
-  <meta property="og:title" id="og-title" content="">
-  <meta property="og:description" id="og-desc" content="">
+  <!-- Open Graph -->
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://antonovvladimirchebara-debug.github.io/moex-oi-analyst/reviews.html">
+  <meta property="og:title" content="Обзоры — Аналитик MOEX/OI">
+  <meta property="og:description" content="Видеообзоры рынка акций и фьючерсов Московской биржи.">
   <meta property="og:image" content="https://antonovvladimirchebara-debug.github.io/moex-oi-analyst/og-image.png">
   <meta property="og:locale" content="ru_RU">
-  <meta property="article:author" content="BigFish">
 
-  <!-- JSON-LD BlogPosting — filled dynamically -->
-  <script type="application/ld+json" id="post-schema"></script>
+  <!-- Twitter Cards -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Обзоры — Аналитик MOEX/OI">
+  <meta name="twitter:description" content="Видеообзоры рынка акций и фьючерсов Московской биржи.">
+  <meta name="twitter:image" content="https://antonovvladimirchebara-debug.github.io/moex-oi-analyst/og-image.png">
 
   <link rel="stylesheet" href="css/style.css">
   <link rel="stylesheet" href="css/animations.css">
   <link rel="stylesheet" href="css/audio-player.css">
-  <link rel="stylesheet" href="css/video-player.css?v=2">
+  <link rel="stylesheet" href="css/reviews.css">
+
   <!-- Favicon -->
   <link rel="icon" type="image/x-icon" href="https://antonovvladimirchebara-debug.github.io/moex-oi-analyst/favicon.ico">
   <link rel="icon" type="image/png" sizes="32x32" href="https://antonovvladimirchebara-debug.github.io/moex-oi-analyst/favicon-32.png">
@@ -37,14 +40,12 @@
   <link rel="icon" type="image/png" sizes="192x192" href="https://antonovvladimirchebara-debug.github.io/moex-oi-analyst/favicon-192.png">
   <link rel="apple-touch-icon" sizes="180x180" href="https://antonovvladimirchebara-debug.github.io/moex-oi-analyst/apple-touch-icon.png">
   <meta name="theme-color" content="#0a0a1a">
+
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;600&family=Share+Tech+Mono&display=swap" rel="stylesheet">
-
-  <!-- marked.js for markdown rendering -->
-  <script src="https://cdn.jsdelivr.net/npm/marked@11.2.0/marked.min.js"></script>
 </head>
-<body class="page-post">
+<body class="page-reviews">
   <canvas id="bg-canvas"></canvas>
   <div class="scanlines"></div>
   <div class="noise-overlay"></div>
@@ -58,7 +59,7 @@
       <ul class="nav-links" role="list">
         <li><a href="index.html" class="nav-link">ГЛАВНАЯ</a></li>
         <li><a href="blog.html" class="nav-link">БЛОГ</a></li>
-        <li><a href="reviews.html" class="nav-link">ОБЗОРЫ</a></li>
+        <li><a href="reviews.html" class="nav-link active">ОБЗОРЫ</a></li>
         <li><a href="index.html#about" class="nav-link">ОБО МНЕ</a></li>
       </ul>
       <button class="nav-burger" id="nav-burger" aria-label="Открыть меню" aria-expanded="false" aria-controls="mobile-menu">
@@ -70,80 +71,31 @@
     <nav class="mobile-menu-links">
       <a href="index.html" class="mobile-link">ГЛАВНАЯ</a>
       <a href="blog.html" class="mobile-link">БЛОГ</a>
-      <a href="reviews.html" class="mobile-link">ОБЗОРЫ</a>
+      <a href="reviews.html" class="mobile-link active">ОБЗОРЫ</a>
       <a href="index.html#about" class="mobile-link">ОБО МНЕ</a>
     </nav>
   </div>
 
-  <main id="main-content" class="post-main">
-    <div id="post-loading" class="loading-state" aria-live="polite">
-      <div class="loading-spinner"></div>
-      <span>ЗАГРУЗКА ПОСТА...</span>
+  <header class="page-header">
+    <div class="page-header-inner">
+      <div class="section-label">ВИДЕО</div>
+      <h1 class="page-title">ОБЗОРЫ РЫНКА</h1>
+      <p class="page-subtitle">Видеоразборы фьючерсов, открытого интереса и рыночных движений</p>
+    </div>
+  </header>
+
+  <main id="main-content" class="blog-main">
+    <div class="blog-meta" aria-live="polite">
+      <span id="reviews-count">Загрузка...</span>
     </div>
 
-    <article id="post-article" class="post-article" hidden aria-label="Пост блога">
-      <!-- Breadcrumb -->
-      <nav class="breadcrumb" aria-label="Навигация-хлебные крошки">
-        <a href="index.html">Главная</a>
-        <span aria-hidden="true">›</span>
-        <a href="blog.html">Блог</a>
-        <span aria-hidden="true">›</span>
-        <span id="post-breadcrumb-title" aria-current="page"></span>
-      </nav>
-
-      <!-- Post header -->
-      <header class="post-header">
-        <div id="post-tags" class="post-tags" role="list" aria-label="Теги поста"></div>
-        <h1 id="post-title" class="post-title"></h1>
-        <div class="post-meta">
-          <span class="post-author">
-            <span class="author-icon">◈</span>
-            BigFish
-          </span>
-          <time id="post-date" class="post-date" datetime=""></time>
-          <span id="post-read-time" class="post-read-time"></span>
-        </div>
-        <div class="post-divider" aria-hidden="true"></div>
-      </header>
-
-      <!-- Post body -->
-      <div id="post-body" class="post-body prose" aria-label="Содержание поста"></div>
-
-      <!-- Post footer -->
-      <footer class="post-footer">
-        <div class="post-share" aria-label="Поделиться">
-          <span class="share-label">ПОДЕЛИТЬСЯ:</span>
-          <button class="share-btn" id="copy-link-btn" aria-label="Скопировать ссылку">
-            <span>ССЫЛКА</span>
-          </button>
-          <a id="share-telegram" href="#" target="_blank" rel="noopener noreferrer" class="share-btn" aria-label="Поделиться в Telegram">
-            TG
-          </a>
-          <a id="share-twitter" href="#" target="_blank" rel="noopener noreferrer" class="share-btn" aria-label="Поделиться в Twitter">
-            ✕
-          </a>
-        </div>
-        <div class="post-nav" role="navigation" aria-label="Навигация между постами">
-          <a id="prev-post" href="#" class="post-nav-btn" hidden>← ПРЕДЫДУЩИЙ</a>
-          <a href="blog.html" class="post-nav-btn btn-outline">ВСЕ ПОСТЫ</a>
-          <a id="next-post" href="#" class="post-nav-btn" hidden>СЛЕДУЮЩИЙ →</a>
-        </div>
-      </footer>
-    </article>
-
-    <!-- COMMENTS SECTION -->
-    <section id="comments" class="comments-section" hidden aria-labelledby="comments-heading">
-      <div class="section-header">
-        <div class="section-label">ОБСУЖДЕНИЕ</div>
-        <h2 id="comments-heading" class="section-title">КОММЕНТАРИИ</h2>
+    <div id="reviews-grid" class="reviews-grid" role="feed" aria-label="Видеообзоры">
+      <div class="loading-state">
+        <div class="loading-spinner"></div>
+        <span>ЗАГРУЗКА ОБЗОРОВ...</span>
       </div>
-      <div id="giscus-container">
-        <!-- Giscus loads here dynamically -->
-      </div>
-    </section>
+    </div>
   </main>
-
-  <div id="sidebar-video-mount" class="vp-sidebar-wrap" data-video-root></div>
 
   <footer class="site-footer" role="contentinfo">
     <div class="footer-inner">
@@ -171,9 +123,8 @@
   }
   </script>
   <script type="module" src="js/three-scene.js"></script>
-  <script src="js/blog.js" defer></script>
+  <script src="js/reviews.js" defer></script>
   <script src="js/audio-player.js" defer></script>
-  <script src="js/video-player.js" defer></script>
   <!-- GoatCounter analytics -->
   <script data-goatcounter="https://moex-oi.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
 </body>
