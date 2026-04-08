@@ -1,21 +1,19 @@
 {
   "playlist": [
     {
-      "id": "2026-04-03-rm6yqk",
-      "title": "Идеального шорта",
-      "enabled": true,
-      "source": "embed",
-      "provider": "youtube",
-      "embedUrl": "https://www.youtube.com/embed/lImLapeMh9A",
-      "views": 0,
-      "publishedAt": "2026-04-03"
-    },
-    {
       "id": "2026-04-07-wqkrh2",
       "title": "Битва_за_79750",
       "enabled": true,
       "source": "local",
       "filename": "bitva_za_79750.mp4"
+    },
+    {
+      "id": "2026-04-08-bq4fo8",
+      "title": "Идеального шорта",
+      "enabled": true,
+      "source": "embed",
+      "provider": "youtube",
+      "embedUrl": "https://www.youtube.com/embed/TiA3e57uTLE"
     }
   ]
 }
