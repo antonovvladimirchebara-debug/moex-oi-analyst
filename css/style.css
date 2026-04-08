@@ -129,17 +129,13 @@ body.page-post > .mobile-menu {
   z-index: 100;
 }
 
-/* ---------- NAVIGATION ---------- */
+/* ---------- NAVIGATION — 3D Cyberpunk (matches footer) ---------- */
 .nav-main {
   position: fixed;
   top: 0; left: 0; right: 0;
-  height: var(--nav-height);
   z-index: 100;
-  background: rgba(5, 5, 20, 0.85);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border-bottom: 1px solid var(--border-neon);
-  box-shadow: 0 2px 30px rgba(0,255,255,0.05);
+  padding: 0.5rem 2rem 0;
+  pointer-events: none;
 }
 
 .nav-inner {
@@ -149,8 +145,41 @@ body.page-post > .mobile-menu {
   max-width: 1400px;
   margin: 0 auto;
   padding: 0 2rem;
-  height: 100%;
+  height: calc(var(--nav-height) - 0.5rem);
+  position: relative;
+  pointer-events: auto;
+  background: rgba(5, 8, 22, 0.85);
+  border: 1px solid rgba(0, 255, 255, 0.12);
+  border-radius: var(--radius-lg);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  box-shadow:
+    0 0 0 1px rgba(0, 255, 255, 0.05),
+    0 8px 40px rgba(0, 0, 0, 0.5),
+    0 0 80px rgba(0, 255, 255, 0.04),
+    inset 0 1px 0 rgba(0, 255, 255, 0.08);
+  overflow: hidden;
 }
+
+/* Glow line at bottom of nav card */
+.nav-inner::before {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 10%;
+  right: 10%;
+  height: 1px;
+  background: linear-gradient(90deg,
+    transparent,
+    var(--neon-cyan) 30%,
+    var(--neon-magenta) 70%,
+    transparent);
+  box-shadow: 0 0 12px rgba(0, 255, 255, 0.4), 0 0 30px rgba(255, 0, 255, 0.2);
+  pointer-events: none;
+}
+
+/* Corner marks — reuse footer-corner class inside nav */
+.nav-inner > .footer-corner { z-index: 2; }
 
 .nav-logo {
   display: flex;
@@ -2796,6 +2825,10 @@ html.lb-open { overflow: hidden !important; }
 
   /* Trading hours */
 
+  /* Nav 3D card on tablet */
+  .nav-main { padding: 0.35rem 1.25rem 0; }
+  .nav-inner { padding: 0 1.25rem; }
+
   /* Footer */
   .site-footer { padding: 0 1.25rem 1.5rem; }
   .footer-3d-wrap { padding: 2rem 1.5rem 1.5rem; }
@@ -2827,8 +2860,9 @@ html.lb-open { overflow: hidden !important; }
 @media (max-width: 480px) {
   :root { --nav-height: 56px; }
 
-  /* Nav logo text shorter */
-  .nav-inner { padding: 0 1rem; }
+  /* Nav 3D card on phone */
+  .nav-main { padding: 0.25rem 0.75rem 0; }
+  .nav-inner { padding: 0 0.75rem; }
 
   /* Hero extra compact */
   .hero { padding: calc(var(--nav-height) + 1rem) 1rem 2rem; }
