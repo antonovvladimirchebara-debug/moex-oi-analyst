@@ -1467,23 +1467,10 @@ body.page-post::before {
 
 /* ---------- MARKET MAP (IMOEX HEATMAP) ---------- */
 .mm-section {
-  background: rgba(0, 0, 0, 0.4);
-  border-top: 1px solid var(--border-glass);
-  border-bottom: 1px solid var(--border-glass);
-  padding: 2.5rem 2rem;
   position: relative;
   overflow: hidden;
 }
-.mm-section::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: radial-gradient(ellipse at 50% 0%, rgba(0,255,255,0.04) 0%, transparent 70%);
-  pointer-events: none;
-}
 .mm-inner {
-  max-width: 1400px;
-  margin: 0 auto;
   position: relative;
 }
 .mm-container {
@@ -1632,11 +1619,7 @@ body.page-post::before {
 }
 
 /* Responsive */
-@media (max-width: 1200px) {
-  .mm-section { padding: 2rem 1.25rem; }
-}
 @media (max-width: 768px) {
-  .mm-section { padding: 1.5rem 1rem; }
   .mm-container { aspect-ratio: 4 / 5; }
   .mm-sector-label { font-size: 0.45rem; }
 }
@@ -1646,29 +1629,11 @@ body.page-post::before {
 
 /* ---------- RATES BOARD (MOEX ISS) ---------- */
 .rates-section {
-  background: rgba(0, 0, 0, 0.4);
-  border-top: 1px solid var(--border-glass);
-  border-bottom: 1px solid var(--border-glass);
-  padding: 2.5rem 2rem;
-  backdrop-filter: blur(20px);
   position: relative;
   overflow: hidden;
 }
-.rates-section::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(135deg,
-    rgba(0,255,255,0.02) 0%,
-    transparent 50%,
-    rgba(255,0,255,0.02) 100%);
-  pointer-events: none;
-}
 
-.rates-inner {
-  max-width: 1400px;
-  margin: 0 auto;
-}
+.rates-inner {}
 
 .rates-header {
   display: flex;
@@ -1884,30 +1849,15 @@ body.page-post::before {
 @media (max-width: 480px) {
   .rates-board { grid-template-columns: 1fr 1fr; gap: 0.6rem; }
   .rate-price  { font-size: 1.2rem; }
-  .rates-section { padding: 1.5rem 1rem; }
 }
 
 /* ---------- TRADING HOURS WIDGET ---------- */
 .th-section {
-  background: rgba(0, 0, 0, 0.35);
-  border-bottom: 1px solid var(--border-glass);
-  padding: 2.5rem 2rem;
-  backdrop-filter: blur(20px);
   position: relative;
   overflow: hidden;
 }
-.th-section::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(135deg,
-    rgba(255,0,255,0.015) 0%,
-    transparent 50%,
-    rgba(0,255,136,0.015) 100%);
-  pointer-events: none;
-}
 
-.th-inner { max-width: 1400px; margin: 0 auto; }
+.th-inner {}
 
 /* Header */
 .th-header {
@@ -2199,7 +2149,6 @@ body.page-post::before {
   .th-clock     { font-size: 1.2rem; }
 }
 @media (max-width: 480px) {
-  .th-section { padding: 1.5rem 1rem; }
   .th-countdown { font-size: 0.85rem; }
 }
 /* ---------- MOEX NEWS WIDGET ---------- */
@@ -2844,10 +2793,8 @@ html.lb-open { overflow: hidden !important; }
 
   /* Rates */
   .rates-board { grid-template-columns: 1fr 1fr; gap: 0.75rem; }
-  .rates-section { padding: 2rem 1.25rem; }
 
   /* Trading hours */
-  .th-section { padding: 2rem 1.25rem; }
 
   /* Footer */
   .site-footer { padding: 0 1.25rem 1.5rem; }
@@ -2895,13 +2842,11 @@ html.lb-open { overflow: hidden !important; }
   .auth-card { padding: 2rem 1.25rem; }
 
   /* Rates */
-  .rates-section { padding: 1.5rem 1rem; }
   .rate-price { font-size: 1.15rem; }
   .rates-board { gap: 0.5rem; }
   .rate-card { padding: 1rem 0.75rem; }
 
   /* Trading hours */
-  .th-section { padding: 1.5rem 1rem; }
   .th-cards-row { grid-template-columns: 1fr; }
   .th-clock { font-size: 1.2rem; }
   .th-countdown { font-size: 0.85rem; min-width: 60px; }
