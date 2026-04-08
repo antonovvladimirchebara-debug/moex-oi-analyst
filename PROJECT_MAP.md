@@ -227,6 +227,7 @@ OAuth-токен Яндекса хранится в `localStorage['moex_oi_yande
 | 2026-04-05 | efa71de | fix: новости MOEX — усиленный фильтр + layout contained |
 | 2026-04-05 | f0d9eb1 | feat: видеоплеер сворачиваемый + футер 3D cyberpunk |
 | 2026-04-06 | c3d2528 | refactor: все секции contained (без full-width фонов) как BigFish |
+| 2026-04-06 | 9654922 | feat: навбар в 3D cyberpunk стиле как футер (glass card, glow-line, corners) |
 
 ## Текущее состояние
 
@@ -255,6 +256,7 @@ OAuth-токен Яндекса хранится в `localStorage['moex_oi_yande
 - ✅ **Видеоплеер:** сворачиваемый sidebar с toggle-кнопкой (как аудиоплеер), localStorage состояние
 - ✅ **Футер:** 3D cyberpunk, contained max-width: 1400px, glow-line, corner marks
 - ✅ **Layout refactor (c3d2528):** все секции (Market Map, Rates, Trading Hours, News, Posts, About, Methodology) внутри `<main>`, прозрачный фон, contained 1400px — единый стиль как BigFish/About
+- ✅ **Навбар 3D (9654922):** навигационная панель в 3D cyberpunk стиле — glass card, border-radius, glow-line, corner marks, box-shadow — как у футера
 - **Audio player:** для Яндекс Музыки нужно зарегистрировать приложение на oauth.yandex.ru → Веб-сервис → Callback URI = URL admin.html
 
 ## Важные замечания
