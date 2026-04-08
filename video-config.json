@@ -3,16 +3,14 @@
     {
       "id": "vp-main",
       "title": "Основной",
+      "tracks": []
+    },
+    {
+      "id": "vp-2026-04-08-m9xhe6",
+      "title": "Обзор рынка",
       "tracks": [
         {
-          "id": "2026-04-07-wqkrh2",
-          "title": "Битва_за_79750",
-          "enabled": true,
-          "source": "local",
-          "filename": "bitva_za_79750.mp4"
-        },
-        {
-          "id": "2026-04-08-bq4fo8",
+          "id": "2026-04-08-1x34dn",
           "title": "Идеального шорта",
           "enabled": true,
           "source": "embed",
@@ -22,15 +20,5 @@
       ]
     }
   ],
-  "activePlaylistId": "vp-main",
-  "playlist": [
-    {
-      "id": "2026-04-08-i0vf23",
-      "title": "Идеального шорта",
-      "enabled": true,
-      "source": "embed",
-      "provider": "youtube",
-      "embedUrl": "https://www.youtube.com/embed/TiA3e57uTLE"
-    }
-  ]
+  "activePlaylistId": "vp-2026-04-08-m9xhe6"
 }
