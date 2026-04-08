@@ -297,6 +297,66 @@
   accent-color: var(--neon-cyan, #00ffff);
 }
 
+/* ── Toggle pill (collapsed state) ──────────── */
+.vp-toggle-btn {
+  display: none;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.5rem 1.1rem 0.5rem 0.8rem;
+  border-radius: 20px;
+  border: 1px solid rgba(255, 0, 255, 0.5);
+  background: rgba(5, 10, 25, 0.95);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  color: var(--vp-accent2, #ff00ff);
+  font-family: var(--font-display, monospace);
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 2px;
+  cursor: pointer;
+  box-shadow:
+    0 0 18px rgba(255, 0, 255, 0.2),
+    0 2px 20px rgba(0, 0, 0, 0.7),
+    inset 0 0 12px rgba(255, 0, 255, 0.04);
+  transition: all 0.2s ease;
+  white-space: nowrap;
+  text-shadow: 0 0 8px rgba(255, 0, 255, 0.5);
+}
+.vp-toggle-btn:hover {
+  border-color: rgba(255, 0, 255, 0.8);
+  box-shadow: 0 0 28px rgba(255, 0, 255, 0.35), 0 2px 20px rgba(0, 0, 0, 0.7);
+  background: rgba(255, 0, 255, 0.08);
+  transform: scale(1.03);
+}
+.vp-toggle-icon {
+  font-size: 0.75rem;
+  text-shadow: 0 0 8px rgba(255, 0, 255, 0.6);
+}
+.vp-toggle-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: rgba(255, 0, 255, 0.4);
+  box-shadow: 0 0 6px rgba(255, 0, 255, 0.4);
+  animation: vp-pulse 1.8s ease-in-out infinite;
+  flex-shrink: 0;
+}
+
+.vp-collapsed .vp-toggle-btn { display: flex; }
+.vp-collapsed .vp-root { display: none; }
+.vp-collapsed {
+  width: auto !important;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.vp-collapse-btn {
+  width: 28px !important;
+  height: 28px !important;
+  font-size: 1rem !important;
+  border-radius: 6px !important;
+}
+
 /* ── Sidebar floating widget ────────────────── */
 .vp-sidebar-wrap {
   position: fixed !important;

@@ -54,15 +54,35 @@
 
   let metaTitleEl, metaRowEl;
 
+  var VP_COLLAPSED_KEY = 'moex_oi_vp_collapsed';
+
+  function setVpCollapsed(collapsed) {
+    if (!mountEl) return;
+    mountEl.classList.toggle('vp-collapsed', collapsed);
+    localStorage.setItem(VP_COLLAPSED_KEY, collapsed ? '1' : '0');
+    var btn = document.getElementById('vp-toggle-btn');
+    if (btn) btn.setAttribute('aria-label', collapsed ? 'Открыть видеоплеер' : 'Свернуть видеоплеер');
+  }
+
   function buildShell() {
     mountEl.innerHTML = `
+      <button class="vp-toggle-btn" id="vp-toggle-btn"
+              aria-label="Открыть видеоплеер" title="Видеоплеер">
+        <span class="vp-toggle-icon" aria-hidden="true">▶</span>
+        <span class="vp-toggle-label">VIDEO 3D</span>
+        <span class="vp-toggle-dot"></span>
+      </button>
       <div class="vp-root" role="region" aria-label="Видеоплеер">
         <div class="vp-label-row">
           <div class="vp-label">
             <span class="vp-label-dot" aria-hidden="true"></span>
             VIDEO 3D
           </div>
-          <span class="vp-count" id="vp-count" aria-live="polite"></span>
+          <div style="display:flex;align-items:center;gap:0.5rem;">
+            <span class="vp-count" id="vp-count" aria-live="polite"></span>
+            <button type="button" class="vp-btn vp-collapse-btn" id="vp-collapse-btn"
+                    title="Свернуть" aria-label="Свернуть видеоплеер">−</button>
+          </div>
         </div>
         <div class="vp-perspective">
           <div class="vp-3d-tilt">
@@ -98,6 +118,11 @@
 
     document.getElementById('vp-prev').addEventListener('click', () => step(-1));
     document.getElementById('vp-next').addEventListener('click', () => step(1));
+    document.getElementById('vp-toggle-btn').addEventListener('click', () => setVpCollapsed(false));
+    document.getElementById('vp-collapse-btn').addEventListener('click', () => setVpCollapsed(true));
+
+    var saved = localStorage.getItem(VP_COLLAPSED_KEY);
+    setVpCollapsed(saved !== '0');
   }
 
   function formatViews(n) {
