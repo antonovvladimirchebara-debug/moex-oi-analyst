@@ -1,16 +1,56 @@
 /**
- * moex-news.js — Top 5 daily news from MOEX ISS API
+ * moex-news.js — Headline news from MOEX (filters out routine regulatory items)
  *
  * Source: https://iss.moex.com/iss/sitenews.json (public, no auth)
+ * Loads multiple pages and filters out technical/regulatory noise,
+ * keeping only substantive business news (same as moex.com "Главные").
  * Refresh: every 30 minutes
- * Columns: id, tag, published, title, body
  */
 
-const NEWS_URL = 'https://iss.moex.com/iss/sitenews.json' +
-  '?iss.meta=off&iss.only=sitenews&lang=ru&start=0';
-
-const NEWS_COUNT  = 5;
+const NEWS_BASE = 'https://iss.moex.com/iss/sitenews.json?iss.meta=off&iss.only=sitenews&lang=ru';
+const NEWS_PAGE_SIZE = 50;
+const NEWS_MAX_PAGES = 6;
+const NEWS_COUNT = 8;
 const NEWS_ITEM_URL = id => `https://www.moex.com/n${id}`;
+
+const NOISE_PATTERNS = [
+  /^О значениях риск/i,
+  /^Об установлении риск/i,
+  /^Об? изменени\w+ дополнительных (мер|условий)/i,
+  /^О регистрации (изменений|выпуска|проспекта)/i,
+  /^О внесении изменений/i,
+  /^О начале торгов ценными бумагами/i,
+  /^Об исключении ценных бумаг/i,
+  /^О прекращении торгов/i,
+  /^О допуске .* к (торгам|операциям)/i,
+  /^О приостановлении/i,
+  /^О возобновлении/i,
+  /^Об изменении (режимов|параметров)/i,
+  /^О включении .* в Список/i,
+  /^Об определении/i,
+  /^О порядке (приобретения|сбора|заключения)/i,
+  /^О проведении .* аукцион/i,
+  /состоится депозитный аукцион/i,
+  /проведет депозитный аукцион/i,
+  /^О присвоении/i,
+  /^О переводе (ценных бумаг|обязательств)/i,
+  /^Об особенностях/i,
+  /изменены значения .* границы ценового коридора/i,
+  /изменены значения .* диапазона оценки/i,
+  /Изменение параметров .* УФК/i,
+  /^Итоги выпуска биржевых облигаций$/i,
+  /^Об ограничении кодов расчетов/i,
+  /^Информация о продаже инвестиционных паёв/i,
+  /^Об отмене размещения/i,
+  /^Дополнительные условия проведения торгов/i,
+  /^О переносе даты/i,
+  /^О предоставлении права/i,
+  /^\d{4}-\d{2}-\d{2}/,
+];
+
+function isHeadline(title) {
+  return !NOISE_PATTERNS.some(re => re.test(title));
+}
 
 // ── Helpers ───────────────────────────────────────────────────
 function stripHtml(html) {
@@ -21,7 +61,6 @@ function stripHtml(html) {
 
 function fmtNewsDate(isoStr) {
   if (!isoStr) return '';
-  // "2026-03-29 14:32:00" → "29 мар 2026, 14:32"
   const d = new Date(isoStr.replace(' ', 'T') + '+03:00');
   const today = new Date();
   const isToday =
@@ -47,42 +86,49 @@ function timeAgo(isoStr) {
   return fmtNewsDate(isoStr);
 }
 
-// Tag label map
 const TAG_LABELS = {
-  news:        { text: 'НОВОСТЬ',    cls: '' },
+  news:        { text: 'ГЛАВНОЕ',    cls: '' },
+  site:        { text: 'ГЛАВНОЕ',    cls: '' },
   press:       { text: 'ПРЕСС-РЕЛИЗ', cls: 'tag-magenta' },
   disclosure:  { text: 'РАСКРЫТИЕ',  cls: 'tag-green' },
   regulation:  { text: 'РЕГУЛЯТОР',  cls: 'tag-magenta' },
   event:       { text: 'СОБЫТИЕ',    cls: 'tag-green' },
 };
 
-// ── Fetch ─────────────────────────────────────────────────────
-async function fetchNews() {
-  const res = await fetch(NEWS_URL + '&_=' + Date.now(), {
-    signal: AbortSignal.timeout(8000),
-  });
+// ── Fetch (multiple pages, filter noise) ─────────────────────
+async function fetchPage(start) {
+  const url = `${NEWS_BASE}&start=${start}&_=${Date.now()}`;
+  const res = await fetch(url, { signal: AbortSignal.timeout(8000) });
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   const json = await res.json();
+  return json.sitenews?.data || [];
+}
 
-  const cols = json.sitenews?.columns;
-  const data = json.sitenews?.data;
-  if (!cols || !data) throw new Error('No news data');
+async function fetchNews() {
+  const headlines = [];
+  const cols_map = { id: 0, tag: 1, title: 2, published_at: 3 };
 
-  const idx = name => cols.indexOf(name);
-  const iId   = idx('id');
-  const iTag  = idx('tag');
-  const iPub  = idx('published');
-  const iTitle = idx('title');
-  const iBody  = idx('body');
+  for (let page = 0; page < NEWS_MAX_PAGES && headlines.length < NEWS_COUNT; page++) {
+    const rows = await fetchPage(page * NEWS_PAGE_SIZE);
+    if (rows.length === 0) break;
 
-  return data.slice(0, NEWS_COUNT).map(row => ({
-    id:        row[iId],
-    tag:       row[iTag] || 'news',
-    published: row[iPub],
-    title:     row[iTitle] || 'Без заголовка',
-    excerpt:   stripHtml(row[iBody]).slice(0, 160),
-    url:       NEWS_ITEM_URL(row[iId]),
-  }));
+    for (const row of rows) {
+      const title = row[cols_map.title] || '';
+      if (!isHeadline(title)) continue;
+
+      headlines.push({
+        id:        row[cols_map.id],
+        tag:       row[cols_map.tag] || 'news',
+        published: row[cols_map.published_at],
+        title:     title.replace(/&quot;/g, '"').replace(/&amp;/g, '&').replace(/&#160;/g, ' '),
+        url:       NEWS_ITEM_URL(row[cols_map.id]),
+      });
+
+      if (headlines.length >= NEWS_COUNT) break;
+    }
+  }
+
+  return headlines;
 }
 
 // ── Render ────────────────────────────────────────────────────
@@ -122,7 +168,6 @@ function renderNews(items) {
            class="news-title" aria-label="${item.title} (открыть на moex.com)">
           ${item.title}
         </a>
-        <p class="news-excerpt">${item.excerpt}${item.excerpt.length >= 160 ? '...' : ''}</p>
       </div>
       <a href="${item.url}" target="_blank" rel="noopener noreferrer"
          class="news-arrow" aria-hidden="true" tabindex="-1">→</a>
@@ -131,7 +176,6 @@ function renderNews(items) {
     list.appendChild(card);
   });
 
-  // Trigger reveal animations
   requestAnimationFrame(() => {
     document.querySelectorAll('#news-list .reveal').forEach(el => {
       setTimeout(() => el.classList.add('visible'), 50);
@@ -151,11 +195,10 @@ function renderSkeleton() {
   if (!list) return;
   list.innerHTML = Array.from({ length: NEWS_COUNT }, (_, i) => `
     <div class="news-card news-skeleton" aria-hidden="true" style="animation-delay:${i * 0.1}s">
-      <div class="news-card-left"><span class="news-num">0${i + 1}</span></div>
+      <div class="news-card-left"><span class="news-num">${String(i + 1).padStart(2, '0')}</span></div>
       <div class="news-card-body">
         <div class="news-skel-line news-skel-meta"></div>
         <div class="news-skel-line news-skel-title"></div>
-        <div class="news-skel-line news-skel-excerpt"></div>
       </div>
     </div>
   `).join('');
@@ -165,6 +208,7 @@ function renderSkeleton() {
 async function updateNews() {
   try {
     const items = await fetchNews();
+    if (items.length === 0) throw new Error('no headlines');
     renderNews(items);
   } catch (err) {
     console.warn('[MOEX news] fetch failed:', err.message);
@@ -180,10 +224,8 @@ function initNews() {
   renderSkeleton();
   updateNews();
 
-  // Refresh every 30 minutes
   setInterval(updateNews, 30 * 60 * 1000);
 
-  // Manual refresh button
   document.getElementById('news-refresh-btn')?.addEventListener('click', async () => {
     const btn = document.getElementById('news-refresh-btn');
     if (btn) { btn.disabled = true; btn.textContent = '⟳ ЗАГРУЗКА...'; }
