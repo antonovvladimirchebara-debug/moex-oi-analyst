@@ -26,7 +26,8 @@
 
 ```
 moex-oi-analyst/
-├── index.html            — Главная: hero (текст + справа 3D-плейс + видео 16:9) + курсы + сессии + новости + посты
+├── index.html            — Главная: hero + карта рынка + курсы + сессии + новости + посты + about + методология
+│                            Все секции внутри <main>, contained (max-width:1400px), прозрачный фон
 ├── blog.html             — Все посты (фильтры + пагинация 10/страница)
 ├── post.html             — Страница поста (markdown render + Giscus)
 ├── admin.html            — Панель автора (GitHub PAT auth)
@@ -222,6 +223,10 @@ OAuth-токен Яндекса хранится в `localStorage['moex_oi_yande
 | 2026-04-01 | 5645ae8 | feat: аудио-плейлист как у видео — ЭФИР, URL-поток, `enabled`/`source` в `localTracks` |
 | 2026-04-01 | 677cf94 | feat: несколько именованных аудио-плейлистов, `activePlaylistId`, миграция с `localTracks` |
 | 2026-04-05 | — | fix: критические SEO-ошибки — незакрытый HTML-комментарий blog.html, рассинхрон URL sitemap, English мета на ru-сайте |
+| 2026-04-05 | 30edf45 | feat: карта рынка (Market Map) — тепловая карта индекса IMOEX (squarified treemap) |
+| 2026-04-05 | efa71de | fix: новости MOEX — усиленный фильтр + layout contained |
+| 2026-04-05 | f0d9eb1 | feat: видеоплеер сворачиваемый + футер 3D cyberpunk |
+| 2026-04-06 | c3d2528 | refactor: все секции contained (без full-width фонов) как BigFish |
 
 ## Текущее состояние
 
@@ -246,6 +251,10 @@ OAuth-токен Яндекса хранится в `localStorage['moex_oi_yande
 - ✅ **SEO fix (2026-04-05):** sitemap.xml и admin.js синхронизированы на формат `posts/<slug>/` (чистые URL)
 - ✅ **SEO fix (2026-04-05):** теги добавлены ко всем постам; build-posts.js исправлен (очистка \n в excerpt для мета-тегов)
 - ✅ **SEO fix (2026-04-05):** статические HTML сгенерированы для всех 5 постов
+- ✅ **Market Map:** тепловая карта индекса IMOEX (squarified treemap), 46 акций, вес + дневное изменение, js/market-map.js
+- ✅ **Видеоплеер:** сворачиваемый sidebar с toggle-кнопкой (как аудиоплеер), localStorage состояние
+- ✅ **Футер:** 3D cyberpunk, contained max-width: 1400px, glow-line, corner marks
+- ✅ **Layout refactor (c3d2528):** все секции (Market Map, Rates, Trading Hours, News, Posts, About, Methodology) внутри `<main>`, прозрачный фон, contained 1400px — единый стиль как BigFish/About
 - **Audio player:** для Яндекс Музыки нужно зарегистрировать приложение на oauth.yandex.ru → Веб-сервис → Callback URI = URL admin.html
 
 ## Важные замечания
