@@ -160,6 +160,23 @@
     </div>
   </header>
 
+  <!-- MARKET MAP -->
+  <section id="market-map-widget" class="mm-section" aria-labelledby="mm-heading">
+    <div class="mm-inner">
+      <div class="rates-header">
+        <div class="rates-title-group">
+          <span class="rates-icon" aria-hidden="true">◈</span>
+          <h2 id="mm-heading" class="rates-title">КАРТА РЫНКА</h2>
+          <span class="rates-source">MOEX IMOEX</span>
+        </div>
+        <div id="mm-status" class="rates-status" aria-live="polite">ЗАГРУЗКА...</div>
+      </div>
+      <div id="mm-container" class="mm-container" role="img" aria-label="Тепловая карта акций индекса IMOEX">
+      </div>
+      <p class="rates-disclaimer">Индекс IMOEX: 46 акций. Размер — вес в индексе. Цвет — дневное изменение цены. Обновление каждые 30 сек.</p>
+    </div>
+  </section>
+
   <!-- RATES BOARD -->
   <section id="rates-widget" class="rates-section" aria-labelledby="rates-heading">
     <div class="rates-inner">
@@ -480,6 +497,7 @@
   </script>
   <script type="module" src="js/three-scene.js"></script>
   <script src="js/blog.js" defer></script>
+  <script src="js/market-map.js" defer></script>
   <script src="js/moex-rates.js" defer></script>
   <script src="js/trading-hours.js" defer></script>
   <script src="js/moex-news.js" defer></script>

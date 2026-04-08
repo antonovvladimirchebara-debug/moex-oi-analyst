@@ -1463,6 +1463,185 @@ body.page-post::before {
 .EasyMDEContainer .CodeMirror-scroll::-webkit-scrollbar-track { background: rgba(0,0,0,0.3); }
 .EasyMDEContainer .CodeMirror-scroll::-webkit-scrollbar-thumb { background: rgba(0,255,255,0.3); border-radius: 3px; }
 
+/* ---------- MARKET MAP (IMOEX HEATMAP) ---------- */
+.mm-section {
+  background: rgba(0, 0, 0, 0.4);
+  border-top: 1px solid var(--border-glass);
+  border-bottom: 1px solid var(--border-glass);
+  padding: 2.5rem 2rem;
+  position: relative;
+  overflow: hidden;
+}
+.mm-section::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at 50% 0%, rgba(0,255,255,0.04) 0%, transparent 70%);
+  pointer-events: none;
+}
+.mm-inner {
+  max-width: 1400px;
+  margin: 0 auto;
+  position: relative;
+}
+.mm-container {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 7;
+  margin-top: 1.25rem;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-glass);
+}
+
+/* Sector groups */
+.mm-sector {
+  position: absolute;
+  overflow: hidden;
+}
+.mm-sector-label {
+  position: absolute;
+  top: 2px;
+  left: 4px;
+  font-family: var(--font-display);
+  font-size: 0.55rem;
+  font-weight: 700;
+  color: rgba(255,255,255,0.45);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  z-index: 2;
+  pointer-events: none;
+  white-space: nowrap;
+  text-shadow: 0 1px 3px rgba(0,0,0,0.8);
+}
+
+/* Individual stock cells */
+.mm-cell {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+  border: 1px solid rgba(0,0,0,0.35);
+  overflow: hidden;
+  cursor: pointer;
+  text-decoration: none;
+  transition: filter 0.15s ease, transform 0.15s ease, z-index 0s;
+}
+.mm-cell:hover {
+  filter: brightness(1.35) saturate(1.2);
+  z-index: 10;
+  transform: scale(1.03);
+  border-color: rgba(255,255,255,0.4);
+  box-shadow: 0 0 12px rgba(0,0,0,0.5);
+}
+.mm-ticker {
+  font-family: var(--font-display);
+  font-weight: 900;
+  color: #fff;
+  line-height: 1.1;
+  text-shadow: 0 1px 4px rgba(0,0,0,0.7);
+  white-space: nowrap;
+}
+.mm-change {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  color: rgba(255,255,255,0.9);
+  line-height: 1;
+  text-shadow: 0 1px 3px rgba(0,0,0,0.7);
+}
+.mm-name {
+  font-family: var(--font-body);
+  font-size: 0.6rem;
+  color: rgba(255,255,255,0.6);
+  line-height: 1;
+  text-shadow: 0 1px 3px rgba(0,0,0,0.7);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 90%;
+}
+
+/* Tooltip */
+.mm-tooltip {
+  position: absolute;
+  z-index: 100;
+  background: rgba(10, 14, 30, 0.95);
+  border: 1px solid var(--border-neon);
+  border-radius: var(--radius-md);
+  padding: 0.75rem 1rem;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+  min-width: 180px;
+  backdrop-filter: blur(8px);
+  box-shadow: 0 4px 20px rgba(0,0,0,0.6), 0 0 15px rgba(0,255,255,0.1);
+}
+.mm-tt-visible {
+  opacity: 1;
+}
+.mm-tt-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.25rem;
+}
+.mm-tt-head strong {
+  font-family: var(--font-display);
+  font-size: 0.95rem;
+  color: var(--neon-cyan);
+}
+.mm-tt-sector {
+  font-size: 0.6rem;
+  color: var(--text-muted);
+  font-family: var(--font-display);
+  letter-spacing: 0.04em;
+}
+.mm-tt-name {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  margin-bottom: 0.5rem;
+}
+.mm-tt-row {
+  display: flex;
+  justify-content: space-between;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--text-primary);
+  padding: 0.15rem 0;
+}
+.mm-tt-row span:first-child {
+  color: var(--text-secondary);
+}
+.mm-up   { color: var(--neon-green) !important; }
+.mm-down { color: #ef5350 !important; }
+
+.mm-no-data {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+/* Responsive */
+@media (max-width: 1200px) {
+  .mm-section { padding: 2rem 1.25rem; }
+}
+@media (max-width: 768px) {
+  .mm-section { padding: 1.5rem 1rem; }
+  .mm-container { aspect-ratio: 4 / 5; }
+  .mm-sector-label { font-size: 0.45rem; }
+}
+@media (max-width: 480px) {
+  .mm-container { aspect-ratio: 3 / 5; }
+}
+
 /* ---------- RATES BOARD (MOEX ISS) ---------- */
 .rates-section {
   background: rgba(0, 0, 0, 0.4);
